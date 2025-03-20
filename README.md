@@ -1,4 +1,6 @@
-# Astrostation
+# PomoDesk
+
+A fork of Astrostation focused on enhancing productivity with Pomodoro techniques.
 
 ## Getting Started
 

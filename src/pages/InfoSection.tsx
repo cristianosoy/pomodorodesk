@@ -8,10 +8,10 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
           <div className="ml-20 mr-20">
             <h1 className="pt-20 text-4xl font-bold">
               {" "}
-              What is <span className="text-purple-500">Astrostation?</span>
+              What is <span className="text-purple-500">PomoDesk?</span>
             </h1>
             <p className="pt-5 text-lg">
-              Astrostation is a versatile desktop and mobile app designed to enhance time management and productivity.
+              PomoDesk is a versatile desktop and mobile app designed to enhance time management and productivity, forked from Astrostation.
               It is centered around a popular concentration improvement strategy, developed by{" "}
               <span className="font-bold italic">
                 <a href="https://francescocirillo.com/products/the-pomodoro-technique" target="_blank">
@@ -22,7 +22,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
             </p>
             <p className="pt-5 text-lg">
               {" "}
-              What makes Astrostation unique is your ability to personalize it with a wide array of aesthetic widgets
+              What makes PomoDesk unique is your ability to personalize it with a wide array of aesthetic widgets
               and customizable settings! A staple for studying or tackling projects!
             </p>
 
@@ -42,7 +42,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
 
             <h2 className="pt-5 text-3xl font-bold"> Benefits of an Online Pomodoro Timer? </h2>
             <p className="pt-5 text-lg">
-              An online Pomodoro timer like Astrostation can help you manage your time more effectively by breaking your
+              An online Pomodoro timer like PomoDesk can help you manage your time more effectively by breaking your
               work into focused sessions. This technique typically involves working for 25-minute intervals, followed by
               short breaks.
             </p>
@@ -83,7 +83,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
               </li>
             </ul>
             <h2 className="pt-5 text-3xl font-bold">
-              The ✨ Aesthetic ✨ Widgets of <span className="text-purple-500">Astrostation</span>
+              The ✨ Aesthetic ✨ Widgets of <span className="text-purple-500">PomoDesk</span>
             </h2>
 
             <ul className="list-disc pt-5 pl-10 text-lg">
@@ -98,7 +98,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
 
             <h2 className="pt-5 text-3xl font-bold">Other ways to stay focused while studying </h2>
             <p className="pt-5 text-lg">
-              In addition to using a Pomodoro timer like Astrostation, there are other strategies you can try out to
+              In addition to using a Pomodoro timer like PomoDesk, there are other strategies you can try out to
               stay focused while studying!
             </p>
 
@@ -112,14 +112,14 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
 
             <h2 className="pt-5 text-3xl font-bold"> Contribute to the app </h2>
             <p className="pt-5 text-lg">
-              Did you know Astrostation is now open source? That means our source code is public and any developer can
+              Did you know PomoDesk is open source? That means our source code is public and any developer can
               submit new features.
             </p>
             <p className="pt-5 text-lg">
               {" "}
               Check out the Github repository{" "}
               <span className="font-bold text-purple-500">
-                <a href="https://github.com/melkeyoss/astrostation" target="_blank">
+                <a href="https://github.com/henryromerodev/pomodorodesk" target="_blank">
                   here!
                 </a>
               </span>
@@ -137,7 +137,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
                 <a className="text-purple-500/[0.75] " href="https://opensource.org/license/mit/">
                   {" - "}License
                 </a>
-                <a className="text-purple-500/[0.75] " href="https://github.com/melkeyoss/astrostation">
+                <a className="text-purple-500/[0.75] " href="https://github.com/henryromerodev/pomodorodesk">
                   {" - "}Github
                 </a>
               </li>
@@ -145,7 +145,7 @@ export const InfoSection = ({ onButtonClick, isSeoVisible }: { onButtonClick; is
             <div className="pb-2 text-center text-neutral-500 ">
               © 2023 Copyright:{" "}
               <a className="text-neutral-500" href="https://twitter.com/melkeydev">
-                Astrostation
+                PomoDesk
               </a>
             </div>
           </footer>

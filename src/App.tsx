@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Backgrounds } from "@Components/Backgrounds/utils";
-import { Astrostation } from "@Root/src/pages/Astrostation";
+import { PomoDesk } from "@Root/src/pages/PomoDesk";
 import { InfoSection } from "@Root/src/pages/InfoSection";
 import { SideNav } from "@Components/Nav/SideNav";
 import { useDarkToggleStore, useFirstTimeUserStore, useBreakStarted, useSeoVisibilityStore } from "@Store";
@@ -33,11 +33,11 @@ function App() {
   const { breakStarted } = useBreakStarted();
   const setDefault = useSetDefault();
   const { isSeoVisible, setSeoVisibility } = useSeoVisibilityStore();
-  const astroStationRef = useRef<HTMLDivElement>(null);
+  const pomoDeskRef = useRef<HTMLDivElement>(null);
 
   const handleButtonClick = () => {
-    if (astroStationRef.current) {
-      astroStationRef.current.scrollIntoView({ behavior: "smooth" });
+    if (pomoDeskRef.current) {
+      pomoDeskRef.current.scrollIntoView({ behavior: "smooth" });
     }
     setTimeout(() => {
       setSeoVisibility(!isSeoVisible);
@@ -72,7 +72,7 @@ function App() {
       >
         <Toaster />
         <SideNav />
-        <Astrostation ref={astroStationRef} />
+        <PomoDesk ref={pomoDeskRef} />
         <InfoSection
           onButtonClick={handleButtonClick}
           isSeoVisible={isSeoVisible}
