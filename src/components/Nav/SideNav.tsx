@@ -226,7 +226,7 @@ export const SideNav = () => {
   }
 
   return (
-    <div className="sideNav absolute flex p-2">
+    <div className="sideNav absolute flex p-2 z-[999]">
       <aside className="flex flex-col overflow-hidden rounded-md">
         <ul>
           <div className="sm:hidden">
