@@ -75,6 +75,7 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { grid } = useGrid();
   const { backgroundColor } = useSetBackground();
   const [isDraggingTask, setIsDraggingTask] = useState(false);
+  const [isDraggingNote, setIsDraggingNote] = useState(false);
 
   return (
     <div
@@ -146,12 +147,18 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
                 toggleHook={isStickyNoteShown}
                 defaultX={stickyNote.stickyNotesPosX}
                 defaultY={stickyNote.stickyNotesPosY}
-                setPosition={setStickyNotesPos}
+                setPosition={(x: number, y: number) => setStickyNotesPos(stickyNote.id, x, y)}
                 isSticky={true}
                 stickyID={stickyNote.id}
-                gridValues={grid}
+                handle=".drag-handle"
+                disabled={isDraggingNote}
               >
-                <Sticky id={stickyNote.id} text={stickyNote.text} color={stickyNote.color} />
+                <Sticky 
+                  id={stickyNote.id} 
+                  text={stickyNote.text} 
+                  color={stickyNote.color} 
+                  setIsDragging={setIsDraggingNote}
+                />
               </DWrapper>
             );
           })}

@@ -64,14 +64,17 @@ export interface IStickyNote {
   color: string;
   stickyNotesPosX: number;
   stickyNotesPosY: number;
+  width: number;
+  height: number;
 }
 
 export interface IStickyNoteState {
   stickyNotes: IStickyNote[];
   addStickyNote: (text: string) => void;
-  editNote: (id: number, newProp: string, newValue: string) => void;
+  editNote: (id: number, newProp: string, newValue: string | number) => void;
   removeNote: (id: number) => void;
   setStickyNotesPos: (id: number, X: number, Y: number) => void;
+  setStickyNotesSize: (id: number, width: number, height: number) => void;
 }
 
 export interface IToggleStickyNote {
