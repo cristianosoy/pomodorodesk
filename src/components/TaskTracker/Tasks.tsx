@@ -10,14 +10,7 @@ interface TasksProps {
 }
 
 export const Tasks = ({ tasks, setIsDraggingTask }: TasksProps) => {
-  const { removeAllTasks, reorderTasks } = useTask();
-
-  function confirmClearTasks() {
-    var answer = window.confirm("This will clear all current tasks");
-    if (answer) {
-      removeAllTasks();
-    }
-  }
+  const { reorderTasks } = useTask();
 
   const handleDragStart = () => {
     setIsDraggingTask(true);
@@ -36,11 +29,15 @@ export const Tasks = ({ tasks, setIsDraggingTask }: TasksProps) => {
   };
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <Droppable droppableId="tasks">
           {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef}>
+            <div 
+              {...provided.droppableProps} 
+              ref={provided.innerRef}
+              className="min-h-[50px]"
+            >
               {tasks.map((task: ITask, index: number) => (
                 <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
                   {(provided) => (
@@ -60,13 +57,6 @@ export const Tasks = ({ tasks, setIsDraggingTask }: TasksProps) => {
           )}
         </Droppable>
       </DragDropContext>
-      {tasks && (
-        <div className="mt-4 flex justify-end">
-          <Button variant="danger" onClick={() => confirmClearTasks()}>
-            Clear All
-          </Button>
-        </div>
-      )}
-    </>
+    </div>
   );
 };

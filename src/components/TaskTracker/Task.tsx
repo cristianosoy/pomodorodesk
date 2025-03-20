@@ -96,16 +96,16 @@ export const Task = ({ task, tasks }) => {
       {!openSettings ? (
         <div
           className={clsx(
-            "my-2 w-full border-l-4 bg-stone-300 py-2 px-2 dark:bg-gray-700",
+            "my-2 w-full border-l-4 bg-gray-700/80 py-2 px-2 text-gray-100",
             task.inProgress &&
               !task.completed &&
-              "joyRideInProgressTask border-cyan-700 bg-cyan-500 dark:bg-cyan-500 dark:text-stone-600",
+              "joyRideInProgressTask border-cyan-500 bg-cyan-600 text-white",
 
-            task.completed && "border-green-500 bg-green-300 line-through dark:bg-green-300 dark:text-stone-600",
+            task.completed && "border-green-500 bg-green-600 text-white line-through",
 
-            !task.completed && task.alerted && "border-red-500 bg-red-300 dark:bg-red-300 dark:text-stone-600",
+            !task.completed && task.alerted && "border-red-500 bg-red-600 text-white",
 
-            !task.completed && !task.alerted && !task.inProgress && "joyRideTask"
+            !task.completed && !task.alerted && !task.inProgress && "joyRideTask border-gray-600"
           )}
           onContextMenu={openContextMenu}
           onDoubleClick={() => preventFalseInProgress()}
@@ -116,14 +116,14 @@ export const Task = ({ task, tasks }) => {
                 {!task.completed ? (
                   <FaCheck
                     className={clsx(
-                      "ml-2 cursor-pointer dark:text-stone-600",
-                      task.completed ? "text-green-500" : "text-slate-500"
+                      "ml-2 cursor-pointer",
+                      task.completed ? "text-green-200" : "text-gray-300 hover:text-white"
                     )}
                     onClick={() => setCompleted(task.id, !task.completed)}
                   />
                 ) : (
                   <RiArrowGoBackFill
-                    className={clsx("ml-2 cursor-pointer", task.completed ? "text-green-500" : "text-slate-500")}
+                    className={clsx("ml-2 cursor-pointer", task.completed ? "text-green-200" : "text-gray-300")}
                     onClick={() => setCompleted(task.id, !task.completed)}
                   />
                 )}
@@ -136,10 +136,13 @@ export const Task = ({ task, tasks }) => {
                 {task.pomodoroCounter}/{task.pomodoro}
               </div>
               <IoCloseSharp
-                className="ml-2 cursor-pointer text-red-500 hover:bg-red-200 rounded"
+                className="ml-2 cursor-pointer text-red-300 hover:text-red-100 hover:bg-red-500/30 rounded"
                 onClick={() => handleDelete()}
               />
-              <BsThreeDotsVertical className="ml-2 cursor-pointer" onClick={() => setOpenSettings(!openSettings)} />
+              <BsThreeDotsVertical 
+                className="ml-2 cursor-pointer text-gray-300 hover:text-white" 
+                onClick={() => setOpenSettings(!openSettings)} 
+              />
             </div>
           </div>
         </div>
