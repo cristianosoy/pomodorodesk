@@ -6,7 +6,9 @@ import { IoCloseSharp, IoInformationCircleOutline } from "react-icons/io5";
 import { useTask, useToggleTasks } from "@Store";
 import { TaskInfoModal } from "@App/components/TaskTracker/InfoModal";
 import { Button } from "@Components/Common/Button";
+import { ResizableBox } from "react-resizable";
 import clsx from "clsx";
+import "react-resizable/css/styles.css";
 import "./TaskTracker.scss";
 
 interface TaskTrackerProps {
@@ -18,6 +20,7 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
   const { setIsTasksToggled } = useToggleTasks();
   const { tasks, removeAllTasks } = useTask();
   const [isTaskInfoModalOpen, setIsTaskInfoModalOpen] = useState(false);
+  const [size, setSize] = useState({ width: 288, height: 400 }); // w-72 = 18rem = 288px
 
   const confirmClearTasks = () => {
     const answer = window.confirm("This will clear all current tasks");
@@ -26,8 +29,20 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
     }
   };
 
+  const onResize = (_event: React.SyntheticEvent, { size: newSize }: { size: { width: number; height: number } }) => {
+    setSize({ width: newSize.width, height: newSize.height });
+  };
+
   return (
-    <div className="mb-2 w-72 sm:w-96 rounded-xl border border-gray-200/30 bg-white/[.96] shadow-lg backdrop-blur-sm dark:border-gray-700/30 dark:bg-gray-800/[.96] flex flex-col max-h-[80vh]">
+    <ResizableBox
+      width={size.width}
+      height={size.height}
+      minConstraints={[288, 300]} // min width w-72 (18rem)
+      maxConstraints={[576, 800]} // max width w-144 (36rem)
+      onResize={onResize}
+      resizeHandles={['se']}
+      className="mb-2 rounded-xl border border-gray-200/30 bg-white/[.96] shadow-lg backdrop-blur-sm dark:border-gray-700/30 dark:bg-gray-800/[.96] flex flex-col"
+    >
       <div className="handle flex w-full justify-between p-3">
         <TaskInfoModal isVisible={isTaskInfoModalOpen} onClose={() => setIsTaskInfoModalOpen(false)} />
         <IoInformationCircleOutline
@@ -55,6 +70,6 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
           )}
         </div>
       </div>
-    </div>
+    </ResizableBox>
   );
 };
