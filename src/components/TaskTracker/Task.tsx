@@ -8,30 +8,29 @@ import { useTask, useTimer, useBreakStarted } from "@Store";
 import clsx from "clsx";
 import { ITask } from "@Root/src/interfaces";
 import { DeleteTaskModal } from "./DeleteTaskModal";
+import { onClickOff } from "../../utils/hooks/useClickOff";
 
 // TODO: Remove alerted
 // TODO: Add a blurb/instructions to let users know how to toggle
 
-const onClickOff = callback => {
-  const callbackRef = useRef<RefCallback<null>>(); // initialize mutable ref, which stores callback
-  const innerRef = useRef<HTMLDivElement>(); // returned to client, who marks "border" element
+const ProgressDot = ({ filled, alerted }) => (
+  <div 
+    className={clsx(
+      "w-2 h-2 rounded-full transition-all duration-300 ease-in-out mx-0.5",
+      filled && !alerted && "bg-cyan-500",
+      filled && alerted && "bg-green-500",
+      !filled && "bg-gray-600/40 dark:bg-gray-600/60"
+    )}
+  />
+);
 
-  // update cb on each render, so second useEffect has access to current value
-  useEffect(() => {
-    callbackRef.current = callback;
-  });
-
-  useEffect(() => {
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-    function handleClick(e) {
-      if (innerRef.current && callbackRef.current && !innerRef.current.contains(e.target)) {
-        callbackRef.current(e);
-      }
-    }
-  }, []);
-
-  return innerRef; // convenience for client (doesn't need to init ref himself)
+const formatTimeSpent = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 };
 
 export const Task = ({ task, tasks }) => {
@@ -44,12 +43,12 @@ export const Task = ({ task, tasks }) => {
     toggleMenu(task.id, false);
   });
 
+  // Calcular tiempo total (asumiendo 25 minutos por pomodoro)
+  const timeSpentInMinutes = task.pomodoroCounter * 25;
+
   const openContextMenu = event => {
     event.preventDefault();
     toggleMenu(task.id, !task.menuToggled);
-
-    /* This is linear search, however it did not seem to 
-       have any perf impact for 100-200 tasks at a time */
     tasks.forEach((task_: ITask) => {
       if (task_.menuToggled) toggleMenu(task_.id, false);
     });
@@ -95,54 +94,54 @@ export const Task = ({ task, tasks }) => {
     <>
       {!openSettings ? (
         <div
-          className={clsx(
-            "my-2 w-full border-l-4 bg-gray-700/80 py-2 px-2 text-gray-100",
-            task.inProgress &&
-              !task.completed &&
-              "joyRideInProgressTask border-cyan-500 bg-cyan-600 text-white",
-
-            task.completed && "border-green-500 bg-green-600 text-white line-through",
-
-            !task.completed && task.alerted && "border-red-500 bg-red-600 text-white",
-
-            !task.completed && !task.alerted && !task.inProgress && "joyRideTask border-gray-600"
-          )}
           onContextMenu={openContextMenu}
-          onDoubleClick={() => preventFalseInProgress()}
+          className={clsx(
+            "group mb-2 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-all duration-200 ease-in-out",
+            task.completed && "border-green-500 bg-green-600 text-white",
+            task.inProgress && !task.completed && "border-cyan-500 bg-cyan-600 text-white",
+            task.alerted && !task.completed && "border-red-500 bg-red-600 text-white",
+            !task.inProgress && !task.completed && !task.alerted && "border-gray-600 bg-gray-700/80 text-gray-100"
+          )}
+          onClick={preventFalseInProgress}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div>
-                {!task.completed ? (
-                  <FaCheck
-                    className={clsx(
-                      "ml-2 cursor-pointer",
-                      task.completed ? "text-green-200" : "text-gray-300 hover:text-white"
-                    )}
-                    onClick={() => setCompleted(task.id, !task.completed)}
-                  />
-                ) : (
-                  <RiArrowGoBackFill
-                    className={clsx("ml-2 cursor-pointer", task.completed ? "text-green-200" : "text-gray-300")}
-                    onClick={() => setCompleted(task.id, !task.completed)}
-                  />
-                )}
-              </div>
-              <div className="whitespace-normal">{task.description}</div>
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center">
+              <span className={clsx("text-sm", task.completed && "line-through")}>
+                {task.description}
+              </span>
             </div>
 
-            <div className="flex items-center">
-              <div className="flex justify-end">
-                {task.pomodoroCounter}/{task.pomodoro}
+            <div className="flex items-center space-x-4">
+              {/* Contenedor de tiempo y progreso */}
+              <div className="flex flex-col items-end gap-1.5">
+                {/* Tiempo total invertido */}
+                <span className="text-xs font-light opacity-80">
+                  {formatTimeSpent(timeSpentInMinutes)}
+                </span>
+                
+                {/* Puntos de progreso */}
+                <div className="flex items-center">
+                  {[...Array(task.pomodoro)].map((_, index) => (
+                    <ProgressDot 
+                      key={index} 
+                      filled={index < task.pomodoroCounter}
+                      alerted={task.alerted} 
+                    />
+                  ))}
+                </div>
               </div>
-              <IoCloseSharp
-                className="ml-2 cursor-pointer text-red-300 hover:text-red-100 hover:bg-red-500/30 rounded"
-                onClick={() => handleDelete()}
-              />
-              <BsThreeDotsVertical 
-                className="ml-2 cursor-pointer text-gray-300 hover:text-white" 
-                onClick={() => setOpenSettings(!openSettings)} 
-              />
+
+              {/* Botones de acción */}
+              <div className="flex items-center space-x-2">
+                <IoCloseSharp
+                  className="cursor-pointer text-red-300 hover:text-red-100 hover:bg-red-500/30 rounded"
+                  onClick={() => handleDelete()}
+                />
+                <BsThreeDotsVertical 
+                  className="cursor-pointer text-gray-300 hover:text-white" 
+                  onClick={() => setOpenSettings(!openSettings)} 
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -154,16 +153,12 @@ export const Task = ({ task, tasks }) => {
           <div ref={innerRef} className="rounded-md bg-neutral-800">
             <ul className="w-full">
               <li
-                onClick={() => {
-                  markNotCompleteWhenTracking();
-                }}
+                onClick={markNotCompleteWhenTracking}
                 className="cursor-pointer rounded-md px-5 py-2 hover:bg-neutral-600"
               >
-                {task.inProgress ? (
-                  <div className="select-none ">Untrack Task</div>
-                ) : (
-                  <div className="select-none ">Track Task</div>
-                )}
+                <div className="select-none">
+                  {task.inProgress ? "Untrack Task" : "Track Task"}
+                </div>
               </li>
               <li
                 onClick={() => {
