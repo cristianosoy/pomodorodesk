@@ -110,6 +110,7 @@ export interface ITaskState {
   alertTask: (id: number, flag: boolean) => void;
   setPomodoro: (id: number, newVal: number) => void;
   toggleMenu: (id: number, flag: boolean) => void;
+  reorderTasks: (tasks: ITask[]) => void;
 }
 
 export interface IKanbanBoard {

@@ -5,8 +5,13 @@ import { AddTask } from "./AddTask";
 import { IoCloseSharp, IoInformationCircleOutline } from "react-icons/io5";
 import { useTask, useToggleTasks } from "@Store";
 import { TaskInfoModal } from "@App/components/TaskTracker/InfoModal";
+import clsx from "clsx";
 
-export const TaskTracker = () => {
+interface TaskTrackerProps {
+  setIsDraggingTask: (isDragging: boolean) => void;
+}
+
+export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
   const [showAddTask, setShowAddTask] = useState(false);
   const { setIsTasksToggled } = useToggleTasks();
   const { tasks } = useTask();
@@ -14,7 +19,7 @@ export const TaskTracker = () => {
 
   return (
     <div className="mb-2 w-72 sm:w-96 rounded-lg border border-gray-200 bg-white/[.96] shadow-md dark:border-gray-700 dark:bg-gray-800/[.96]">
-      <div className="handle flex w-full cursor-move justify-between p-2">
+      <div className="handle flex w-full justify-between p-2">
         <TaskInfoModal isVisible={isTaskInfoModalOpen} onClose={() => setIsTaskInfoModalOpen(false)} />
         <IoInformationCircleOutline
           className="cursor-pointer text-white"
@@ -28,7 +33,7 @@ export const TaskTracker = () => {
       <div className="joyRideTaskTracker pb-3 pr-3 pl-3 dark:text-gray-300">
         <Header title="Task Tracker" onAdd={() => setShowAddTask(!showAddTask)} showAdd={showAddTask} />
         {showAddTask && <AddTask />}
-        {tasks.length > 0 ? <Tasks tasks={tasks} /> : "No Tasks to Show"}
+        {tasks.length > 0 ? <Tasks tasks={tasks} setIsDraggingTask={setIsDraggingTask} /> : "No Tasks to Show"}
       </div>
     </div>
   );

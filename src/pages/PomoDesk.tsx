@@ -73,9 +73,15 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { backgroundId } = useSetBackground();
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
   const { grid } = useGrid();
+  const { backgroundColor } = useSetBackground();
+  const [isDraggingTask, setIsDraggingTask] = useState(false);
 
   return (
-    <div ref={ref} className="pb-8 md:h-screen md:pb-0">
+    <div
+      ref={ref}
+      className="relative h-screen w-screen overflow-hidden"
+      style={{ backgroundColor: backgroundColor }}
+    >
       {backgroundId == Background.UNSPLASH && <UnsplashFooter />}
       <div className={"bodyPart ml-auto flex w-5/6 flex-wrap justify-end gap-2 py-2 px-2"}>
         <div className="settingsButton">
@@ -122,7 +128,7 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
             <Timer />
           </div>
           <div className={clsx(isTasksToggled ? "block" : "hidden")}>
-            <TaskTracker />
+            <TaskTracker setIsDraggingTask={setIsDraggingTask} />
           </div>
           <div className={clsx(isQuoteToggled ? "block" : "hidden")}>
             <Quotes />
@@ -166,8 +172,10 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
             setPosition={setTaskPos}
             isSticky={false}
             gridValues={grid}
+            disabled={isDraggingTask}
+            handle=".handle"
           >
-            <TaskTracker />
+            <TaskTracker setIsDraggingTask={setIsDraggingTask} />
           </DWrapper>
           <DWrapper
             toggleHook={isMusicToggled && isMusicShown}

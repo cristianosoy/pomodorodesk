@@ -6,6 +6,19 @@ import clsx from "clsx";
 
 let GLOBAL_Z = 50;
 
+interface DWrapperProps {
+  children: any;
+  toggleHook: boolean;
+  defaultX: number;
+  defaultY: number;
+  setPosition: any;
+  isSticky: boolean;
+  stickyID?: number;
+  gridValues?: number[];
+  handle?: string;
+  disabled?: boolean;
+}
+
 export const DWrapper = ({
   children,
   toggleHook,
@@ -16,17 +29,8 @@ export const DWrapper = ({
   stickyID,
   gridValues,
   handle,
-}: {
-  children: any;
-  toggleHook: boolean;
-  defaultX: number;
-  defaultY: number;
-  setPosition: any;
-  isSticky: boolean;
-  stickyID?: number;
-  gridValues?: number[];
-  handle?: string;
-}) => {
+  disabled = false,
+}: DWrapperProps) => {
   const { setStickyNotesPos } = useStickyNote();
   const { areWidgetsLocked } = useLockWidgetsStore();
   const [z, setZIndex] = useState(0);
@@ -78,7 +82,7 @@ export const DWrapper = ({
         onStop={(_, data) => changePosition(data)}
         //@ts-ignore
         grid={gridValues}
-        disabled={areWidgetsLocked}
+        disabled={disabled || areWidgetsLocked}
         handle={handle}
       >
         {isSticky ? (

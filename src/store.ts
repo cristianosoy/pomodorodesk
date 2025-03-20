@@ -404,6 +404,9 @@ export const useTask = create<ITaskState>(
           ),
         }));
       },
+      reorderTasks: (tasks) => {
+        set({ tasks });
+      },
     }),
     { name: "user_tasks" }
   )

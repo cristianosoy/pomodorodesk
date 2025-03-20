@@ -96,7 +96,7 @@ export const Task = ({ task, tasks }) => {
       {!openSettings ? (
         <div
           className={clsx(
-            "my-2 w-full cursor-pointer border-l-4 bg-stone-300 py-2 px-2 dark:bg-gray-700",
+            "my-2 w-full border-l-4 bg-stone-300 py-2 px-2 dark:bg-gray-700",
             task.inProgress &&
               !task.completed &&
               "joyRideInProgressTask border-cyan-700 bg-cyan-500 dark:bg-cyan-500 dark:text-stone-600",
@@ -110,7 +110,7 @@ export const Task = ({ task, tasks }) => {
           onContextMenu={openContextMenu}
           onDoubleClick={() => preventFalseInProgress()}
         >
-          <div className="cancelDrag flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div>
                 {!task.completed ? (
