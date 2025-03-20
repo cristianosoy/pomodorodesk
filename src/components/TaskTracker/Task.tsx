@@ -2,10 +2,12 @@ import { useRef, useEffect, useState, RefCallback } from "react";
 import { FaCheck } from "react-icons/fa";
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { IoCloseSharp } from "react-icons/io5";
 import { Settings } from "./Settings";
 import { useTask, useTimer, useBreakStarted } from "@Store";
 import clsx from "clsx";
 import { ITask } from "@Root/src/interfaces";
+import { DeleteTaskModal } from "./DeleteTaskModal";
 
 // TODO: Remove alerted
 // TODO: Add a blurb/instructions to let users know how to toggle
@@ -34,6 +36,7 @@ const onClickOff = callback => {
 
 export const Task = ({ task, tasks }) => {
   const [openSettings, setOpenSettings] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { removeTask, setCompleted, toggleInProgressState, alertTask, setPomodoroCounter, toggleMenu } = useTask();
   const { breakStarted } = useBreakStarted();
   const { timerQueue } = useTimer();
@@ -53,9 +56,12 @@ export const Task = ({ task, tasks }) => {
   };
 
   const handleDelete = () => {
-    // FIXME: This should be a modal
-    alert("Are you sure you want to delete this task?");
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
     removeTask(task.id);
+    setShowDeleteModal(false);
   };
 
   /* Observation: When double clicking a task the text is highlighted
@@ -126,10 +132,13 @@ export const Task = ({ task, tasks }) => {
             </div>
 
             <div className="flex items-center">
-              {/*This the guy */}
               <div className="flex justify-end">
                 {task.pomodoroCounter}/{task.pomodoro}
               </div>
+              <IoCloseSharp
+                className="ml-2 cursor-pointer text-red-500 hover:bg-red-200 rounded"
+                onClick={() => handleDelete()}
+              />
               <BsThreeDotsVertical className="ml-2 cursor-pointer" onClick={() => setOpenSettings(!openSettings)} />
             </div>
           </div>
@@ -162,18 +171,16 @@ export const Task = ({ task, tasks }) => {
               >
                 <div className="select-none">Complete Task</div>
               </li>
-              <li
-                onClick={() => {
-                  handleDelete();
-                }}
-                className="cursor-pointer rounded-md px-5 py-2 hover:bg-neutral-600"
-              >
-                <div className="select-none">Delete Task</div>
-              </li>
             </ul>
           </div>
         )}
       </div>
+      <DeleteTaskModal
+        isVisible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        taskDescription={task.description}
+      />
     </>
   );
 };

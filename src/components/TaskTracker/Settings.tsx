@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Button } from "@Components/Common/Button";
 import { AiFillDelete } from "react-icons/ai";
 import { useTask } from "@Store";
+import { DeleteTaskModal } from "./DeleteTaskModal";
+
 export const Settings = ({ setOpenSettings, Task }) => {
   const [text, setText] = useState(Task.description);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { removeTask, setPomodoro, alertTask, renameTask } = useTask();
 
   const [changePomo, setChangePomo] = useState(Task.pomodoro);
@@ -21,10 +24,13 @@ export const Settings = ({ setOpenSettings, Task }) => {
   };
 
   const handleDelete = () => {
-    alert("Are you sure you want to delete this task?");
+    setShowDeleteModal(true);
+  };
 
+  const confirmDelete = () => {
     removeTask(Task.id);
     setOpenSettings(false);
+    setShowDeleteModal(false);
   };
 
   function handlePomoChange(e: any) {
@@ -87,6 +93,12 @@ export const Settings = ({ setOpenSettings, Task }) => {
           Okay
         </Button>
       </div>
+      <DeleteTaskModal
+        isVisible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        taskDescription={Task.description}
+      />
     </div>
   );
 };
