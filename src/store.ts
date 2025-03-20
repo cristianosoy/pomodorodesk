@@ -239,7 +239,7 @@ export const useStickyNote = create<IStickyNoteState>(
               color: ColorOptions.Yellow,
               stickyNotesPosX: 165,
               stickyNotesPosY: 0,
-              width: 215,
+              width: 340,
               height: 200
             } as IStickyNote,
           ],

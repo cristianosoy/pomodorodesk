@@ -1,0 +1,146 @@
+.rich-text-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Kalam', cursive;
+
+  .editor-toolbar {
+    padding: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: nowrap;
+    min-height: 36px;
+    background-color: rgba(255, 255, 255, 0.1);
+
+    button {
+      min-width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #4a5568;
+      transition: all 0.2s;
+      padding: 0 4px;
+      font-size: 14px;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      &.is-active {
+        background-color: rgba(0, 0, 0, 0.1);
+        color: #2d3748;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        
+        &:hover {
+          background-color: transparent;
+        }
+      }
+    }
+
+    .toolbar-separator {
+      width: 1px;
+      height: 20px;
+      background-color: rgba(0, 0, 0, 0.1);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+  }
+
+  .ProseMirror {
+    flex: 1;
+    padding: 8px;
+    overflow-y: auto;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.6;
+    font-family: 'Kalam', cursive;
+    letter-spacing: 0.3px;
+
+    p {
+      margin: 0;
+      margin-bottom: 0.5em;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    ul {
+      padding-left: 1.2em;
+      margin: 0.5em 0;
+      list-style-type: disc;
+
+      li {
+        position: relative;
+        padding-left: 0.2em;
+        margin-bottom: 0.2em;
+
+        &::marker {
+          color: #4a5568;
+          font-size: 1.2em;
+          font-family: 'Kalam', cursive;
+        }
+      }
+    }
+
+    ol {
+      padding-left: 1.2em;
+      margin: 0.5em 0;
+      list-style-type: decimal;
+
+      &[style*="lower-alpha"] {
+        list-style-type: lower-alpha;
+      }
+
+      li {
+        position: relative;
+        padding-left: 0.2em;
+        margin-bottom: 0.2em;
+
+        &::marker {
+          color: #4a5568;
+          font-family: 'Kalam', cursive;
+        }
+      }
+    }
+
+    u {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+    }
+
+    &.ProseMirror-focused {
+      outline: none;
+    }
+
+    p.is-editor-empty:first-child::before {
+      color: #adb5bd;
+      content: attr(data-placeholder);
+      float: left;
+      height: 0;
+      pointer-events: none;
+      font-family: 'Kalam', cursive;
+      font-style: italic;
+    }
+
+    mark {
+      &.highlight {
+        background-color: #fef08a;
+        border-radius: 2px;
+        padding: 0 2px;
+      }
+    }
+  }
+} 

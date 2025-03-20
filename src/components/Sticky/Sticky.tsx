@@ -2,9 +2,9 @@ import { IoCloseSharp, IoEllipsisHorizontalSharp } from "react-icons/io5";
 import { MouseEventHandler, useState, useEffect } from "react";
 import { useStickyNote } from "@Store";
 import { ColorOptions } from "@Root/src/interfaces";
-import TextareaAutosize from "react-textarea-autosize";
 import { ResizableBox } from "react-resizable";
 import { useLockWidgetsStore } from "@Store";
+import RichTextEditor from "./RichTextEditor";
 import "react-resizable/css/styles.css";
 import "./Sticky.scss";
 
@@ -107,13 +107,12 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
           </div>
         </div>
         <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 40px)', overflow: 'auto' }}>
-          <TextareaAutosize
-            placeholder="Add a note"
+          <RichTextEditor
             value={text}
-            onChange={e => {
-              editNote(id, "text", e.target.value);
+            onChange={(value) => {
+              editNote(id, "text", value);
             }}
-            className="w-full h-full bg-transparent border-none outline-none resize-none"
+            placeholder="Add a note..."
           />
         </div>
       </ResizableBox>

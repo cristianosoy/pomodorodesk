@@ -1,0 +1,161 @@
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Underline from '@tiptap/extension-underline';
+import Highlight from '@tiptap/extension-highlight';
+import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl } from 'react-icons/bs';
+import { HiMiniPencilSquare } from 'react-icons/hi2';
+import { BiUndo, BiRedo } from 'react-icons/bi';
+import { TbClearFormatting } from 'react-icons/tb';
+import './RichTextEditor.scss';
+
+// Importar fuente Kalam
+const KalamFont = () => {
+  return (
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+  );
+};
+
+interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: RichTextEditorProps) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: {
+          HTMLAttributes: {
+            class: 'bullet-list',
+          },
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'ordered-list',
+          },
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Underline,
+      Highlight.configure({ multicolor: false }),
+      Placeholder.configure({
+        placeholder,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm focus:outline-none font-kalam',
+      },
+    },
+  });
+
+  if (!editor) {
+    return null;
+  }
+
+  const toggleListType = (type: 'bulletList' | 'orderedList') => {
+    if (type === 'orderedList') {
+      editor.chain().focus().toggleOrderedList().run();
+    } else {
+      editor.chain().focus().toggleBulletList().run();
+    }
+  };
+
+  return (
+    <>
+      <KalamFont />
+      <div className="rich-text-editor">
+        <div className="editor-toolbar">
+          <button
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            type="button"
+            title="Undo"
+          >
+            <BiUndo size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            type="button"
+            title="Redo"
+          >
+            <BiRedo size={16} />
+          </button>
+          <div className="toolbar-separator" />
+          <button
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={editor.isActive('bold') ? 'is-active' : ''}
+            type="button"
+            title="Bold"
+          >
+            <BsTypeBold size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={editor.isActive('italic') ? 'is-active' : ''}
+            type="button"
+            title="Italic"
+          >
+            <BsTypeItalic size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={editor.isActive('underline') ? 'is-active' : ''}
+            type="button"
+            title="Underline"
+          >
+            <BsTypeUnderline size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
+            className={editor.isActive('highlight') ? 'is-active' : ''}
+            type="button"
+            title="Highlight"
+          >
+            <HiMiniPencilSquare size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().unsetAllMarks().run()}
+            type="button"
+            title="Clear Formatting"
+          >
+            <TbClearFormatting size={16} />
+          </button>
+          <div className="toolbar-separator" />
+          <button
+            onClick={() => toggleListType('bulletList')}
+            className={editor.isActive('bulletList') ? 'is-active' : ''}
+            type="button"
+            title="Bullet List"
+          >
+            <BsListUl size={16} />
+          </button>
+          <button
+            onClick={() => toggleListType('orderedList')}
+            className={editor.isActive('orderedList') ? 'is-active' : ''}
+            type="button"
+            title="Numbered List"
+          >
+            <BsListOl size={16} />
+          </button>
+        </div>
+        <EditorContent editor={editor} />
+      </div>
+    </>
+  );
+};
+
+export default RichTextEditor; 
