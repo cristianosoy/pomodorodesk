@@ -366,7 +366,7 @@ export const Timer = () => {
                 <Button
                   className={clsx(
                     "text-gray-800 hover:text-white dark:text-white",
-                    breakLength === shortBreakLength && "border-2 border-blue-900"
+                    breakLength === shortBreakLength && "bg-blue-600 text-white dark:bg-blue-700 dark:text-white border-none"
                   )}
                   variant="cold"
                   onClick={() => selectBreak(shortBreakLength)}
@@ -380,9 +380,8 @@ export const Timer = () => {
                 <Button
                   className={clsx(
                     "text-gray-800 hover:text-white dark:text-white",
-                    breakLength === longBreakLength && "border-2 border-blue-900"
+                    breakLength === longBreakLength && "bg-blue-600 text-white dark:bg-blue-700 dark:text-white border-none"
                   )}
-                  // This should either be cold or coldPrimary
                   variant="cold"
                   onClick={() => selectBreak(longBreakLength)}
                   disabled={hasStarted}
@@ -393,7 +392,13 @@ export const Timer = () => {
             </div>
             {/* Timer */}
             <div>
-              <p id="tabular-nums">{sessionType}</p>
+              <p id="tabular-nums" className={clsx(
+                "text-sm mt-2 mb-1",
+                sessionType === "Break" && breakLength === shortBreakLength && "text-blue-600 dark:text-blue-400",
+                sessionType === "Break" && breakLength === longBreakLength && "text-blue-600 dark:text-blue-400"
+              )}>
+                {sessionType === "Break" ? (breakLength === shortBreakLength ? "Short Break" : "Long Break") : "Session"}
+              </p>
               <div className="text-7xl font-bold tabular-nums sm:text-9xl">
                 {/*// @ts-ignore */}
                 {formatDisplayTime(timerMinutes)}:{/*// @ts-ignore */}
