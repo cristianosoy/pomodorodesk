@@ -3,7 +3,8 @@ import type YouTube from "react-youtube";
 export interface IPlayer {
   playVideo: () => void;
   pauseVideo: () => void;
-  changeVideo: () => void;
+  stopVideo: () => void;
+  loadVideoById: (videoId: string) => void;
   setVolume: (volume: number) => void;
 }
 

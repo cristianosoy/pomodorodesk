@@ -96,20 +96,12 @@
       height: auto;
       border-radius: 4px;
       cursor: zoom-in;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: block;
-      margin: 8px auto;
+      transition: transform 0.2s ease;
       
       &:hover {
         transform: scale(1.02);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
-    }
-
-    // Asegurar que el contenedor de la imagen también sea interactivo
-    .ProseMirror-selectednode img {
-      outline: 2px solid #68cef8;
-      cursor: zoom-in;
     }
   }
 
