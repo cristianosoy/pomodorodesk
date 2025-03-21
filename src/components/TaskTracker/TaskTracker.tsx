@@ -125,7 +125,11 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
         <div className="joyRideTaskTracker px-4 pt-1 flex-1 overflow-y-auto custom-scrollbar">
           <Header title="Task Tracker" onAdd={() => setShowAddTask(!showAddTask)} showAdd={showAddTask} />
           {showAddTask && <AddTask />}
-          {sortedTasks.length > 0 ? <Tasks tasks={sortedTasks} setIsDraggingTask={setIsDraggingTask} /> : "No Tasks to Show"}
+          {sortedTasks.length > 0 ? <Tasks tasks={sortedTasks} setIsDraggingTask={setIsDraggingTask} /> : (
+            <div className="text-center py-4 text-gray-100 dark:text-gray-200 font-medium">
+              No Tasks to Show
+            </div>
+          )}
         </div>
         <div className="px-4 py-3 mt-auto">
           {tasks.length > 0 && (
