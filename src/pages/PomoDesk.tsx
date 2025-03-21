@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useToggleMusic,
   useToggleTimer,
@@ -49,7 +49,7 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { isTimerToggled, isTimerShown } = useToggleTimer();
   const { isTasksToggled, isTasksShown } = useToggleTasks();
   const { isSpotifyToggled, isSpotifyShown } = useSpotifyMusic();
-  const { isStickyNoteShown } = useToggleStickyNote();
+  const { isStickyNoteShown, setIsStickyNoteShown } = useToggleStickyNote();
   const { isQuoteToggled, isQuoteShown } = useToggleQuote();
   const { isTwitchToggled, isTwitchShown } = useToggleTwitch();
   const { isYoutubeToggled, isYoutubeShown } = useToggleYoutube();
@@ -61,7 +61,7 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { spotifyPosX, spotifyPosY, setSpotifyPos } = usePosSpotify();
   const { quotePosX, quotePosY, setQuotePos } = usePosQuote();
   const { timerPosX, timerPosY, setTimerPos } = usePosTimer();
-  const { stickyNotes, setStickyNotesPos } = useStickyNote();
+  const { stickyNotes, setStickyNotesPos, addStickyNote } = useStickyNote();
   const { twitchPosX, twitchPosY, setTwitchPos } = usePosTwitch();
   const { youtubePosX, youtubePosY, setYoutubePos } = usePosYoutube();
   const { kanbanPosX, kanbanPosY, setKanbanPos } = usePosKanban();
@@ -74,6 +74,62 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { backgroundColor } = useSetBackground();
   const [isDraggingTask, setIsDraggingTask] = useState(false);
   const [isDraggingNote, setIsDraggingNote] = useState(false);
+
+  // Función para manejar el evento de pegado (Ctrl+V) a nivel global
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Solo procesar si no estamos dentro de un input, textarea o elemento editable
+      const target = e.target as HTMLElement;
+      const isEditableTarget = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+      
+      if (!isEditableTarget) {
+        // Si hay texto en el portapapeles
+        if (e.clipboardData?.getData('text')) {
+          const text = e.clipboardData.getData('text');
+          if (text.trim()) {
+            addStickyNote(text);
+            setIsStickyNoteShown(true);
+            return;
+          }
+        }
+        
+        // Si hay imágenes en el portapapeles
+        const items = e.clipboardData?.items;
+        if (items) {
+          for (const item of Array.from(items)) {
+            if (item.type.indexOf('image') === 0) {
+              e.preventDefault();
+              
+              const blob = item.getAsFile();
+              if (blob) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const result = event.target?.result;
+                  if (typeof result === 'string') {
+                    // Crear una nota nueva con una imagen
+                    const imgHtml = `<img src="${result}" alt="Imagen pegada" />`;
+                    addStickyNote(imgHtml);
+                    setIsStickyNoteShown(true);
+                  }
+                };
+                reader.readAsDataURL(blob);
+                return;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [addStickyNote, setIsStickyNoteShown]);
 
   return (
     <div

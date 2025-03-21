@@ -5,10 +5,13 @@ import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Strike from '@tiptap/extension-strike';
 import Link from '@tiptap/extension-link';
-import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl, BsLink45Deg } from 'react-icons/bs';
+import Image from '@tiptap/extension-image';
+import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl, BsLink45Deg, BsImage } from 'react-icons/bs';
 import { HiMiniPencilSquare } from 'react-icons/hi2';
 import { BiUndo, BiRedo } from 'react-icons/bi';
 import { TbClearFormatting } from 'react-icons/tb';
+import { ImageModal } from './ImageModal';
+import { useState } from 'react';
 import './RichTextEditor.scss';
 
 // Importar fuente Kalam
@@ -28,6 +31,9 @@ interface RichTextEditorProps {
 }
 
 const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: RichTextEditorProps) => {
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -59,6 +65,13 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
           rel: 'noopener noreferrer', // Seguridad para enlaces externos
         },
       }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'note-image',
+        },
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -70,6 +83,44 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
     editorProps: {
       attributes: {
         class: 'prose prose-sm focus:outline-none font-kalam',
+      },
+      handlePaste: (view, event) => {
+        // Manejar imágenes pegadas desde el portapapeles
+        const items = event.clipboardData?.items;
+        if (items) {
+          for (const item of Array.from(items)) {
+            if (item.type.indexOf('image') === 0) {
+              event.preventDefault();
+              
+              const blob = item.getAsFile();
+              if (blob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const result = e.target?.result;
+                  if (typeof result === 'string') {
+                    editor?.chain().focus().setImage({ src: result }).run();
+                  }
+                };
+                reader.readAsDataURL(blob);
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      },
+      handleClick: (view, pos, event) => {
+        const target = event.target as HTMLElement;
+        // Verificar si el clic fue en una imagen o en su contenedor
+        if (target.tagName === 'IMG' || target.querySelector('img')) {
+          const img = target.tagName === 'IMG' ? target : target.querySelector('img');
+          if (img) {
+            setSelectedImage((img as HTMLImageElement).src);
+            setShowImageModal(true);
+            return true;
+          }
+        }
+        return false;
       },
     },
   });
@@ -115,6 +166,15 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
       .extendMarkRange('link')
       .setMark('link', { href: finalUrl, target: '_blank' })
       .run();
+  };
+
+  // Función para añadir una imagen
+  const addImage = () => {
+    const url = window.prompt('URL de la imagen');
+    
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
   };
 
   return (
@@ -188,6 +248,13 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
             <BsLink45Deg size={16} />
           </button>
           <button
+            onClick={addImage}
+            type="button"
+            title="Añadir imagen"
+          >
+            <BsImage size={16} />
+          </button>
+          <button
             onClick={() => editor.chain().focus().unsetAllMarks().run()}
             type="button"
             title="Clear Formatting"
@@ -216,6 +283,11 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
           <EditorContent editor={editor} />
         </div>
       </div>
+      <ImageModal 
+        isVisible={showImageModal}
+        imageUrl={selectedImage}
+        onClose={() => setShowImageModal(false)}
+      />
     </>
   );
 };

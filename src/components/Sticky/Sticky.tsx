@@ -190,7 +190,7 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         width={size.width}
         height={size.height}
         minConstraints={[150, 150]}
-        maxConstraints={[400, 400]}
+        maxConstraints={[800, 600]}
         onResize={onResize}
         onResizeStart={onResizeStart}
         onResizeStop={onResizeStop}

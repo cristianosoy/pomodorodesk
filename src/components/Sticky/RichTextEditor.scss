@@ -68,6 +68,49 @@
     overflow-y: auto;
     position: relative;
     height: calc(100% - 36px);
+
+    // Estilos para imágenes
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin: 8px 0;
+      display: block;
+      cursor: pointer;
+    }
+
+    // Estilos para enlaces
+    a {
+      color: #0055cc;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      
+      &:hover {
+        color: #003d99;
+      }
+    }
+
+    .note-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      cursor: zoom-in;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: block;
+      margin: 8px auto;
+      
+      &:hover {
+        transform: scale(1.02);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    // Asegurar que el contenedor de la imagen también sea interactivo
+    .ProseMirror-selectednode img {
+      outline: 2px solid #68cef8;
+      cursor: zoom-in;
+    }
   }
 
   .ProseMirror {
