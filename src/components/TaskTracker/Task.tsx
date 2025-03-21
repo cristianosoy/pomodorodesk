@@ -24,6 +24,21 @@ const ProgressDot = ({ filled, alerted }) => (
   />
 );
 
+// Componente para el checkbox de completado
+const TaskCheckbox = ({ completed, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={clsx(
+      "flex-shrink-0 w-5 h-5 mr-3 flex items-center justify-center rounded border transition-colors duration-200 ease-in-out",
+      completed 
+        ? "bg-green-600 border-green-500 hover:bg-green-700" 
+        : "border-gray-400 hover:border-gray-300 dark:border-gray-500 dark:hover:border-gray-400"
+    )}
+  >
+    {completed && <FaCheck className="text-white text-xs" />}
+  </div>
+);
+
 const formatTimeSpent = (seconds: number): string => {
   if (!seconds && seconds !== 0) return "0s";
   
@@ -156,6 +171,12 @@ export const Task = ({ task, tasks }) => {
     setShowDeleteModal(false);
   };
 
+  // Manejar clic en el checkbox
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation(); // Evitar que se active el preventFalseInProgress
+    setCompleted(task.id, !task.completed);
+  };
+
   /* Observation: When double clicking a task the text is highlighted
      This may not be a huge UX blunder, but it does exist. TBD */
   const preventFalseInProgress = () => {
@@ -188,6 +209,10 @@ export const Task = ({ task, tasks }) => {
         >
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center">
+              <TaskCheckbox 
+                completed={task.completed} 
+                onClick={handleCheckboxClick} 
+              />
               <span className={clsx("text-sm", task.completed && "line-through")}>
                 {task.description}
               </span>
@@ -213,15 +238,17 @@ export const Task = ({ task, tasks }) => {
                 </div>
               </div>
 
-              {/* Botones de acción */}
-              <div className="flex items-center space-x-2">
-                <IoCloseSharp
-                  className="cursor-pointer text-red-300 hover:text-red-100 hover:bg-red-500/30 rounded"
-                  onClick={() => handleDelete()}
-                />
-                <BsThreeDotsVertical 
-                  className="cursor-pointer text-gray-300 hover:text-white" 
-                  onClick={() => setOpenSettings(!openSettings)} 
+              {/* Menú de opciones */}
+              <div className="relative">
+                <BsThreeDotsVertical
+                  className={clsx(
+                    "opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+                    task.menuToggled && "opacity-100"
+                  )}
+                  onClick={e => {
+                    e.stopPropagation();
+                    openContextMenu(e);
+                  }}
                 />
               </div>
             </div>
@@ -249,7 +276,9 @@ export const Task = ({ task, tasks }) => {
                 }}
                 className="cursor-pointer rounded-md px-5 py-2 hover:bg-neutral-600"
               >
-                <div className="select-none">Complete Task</div>
+                <div className="select-none">
+                  {task.completed ? "Mark as Incomplete" : "Complete Task"}
+                </div>
               </li>
             </ul>
           </div>
