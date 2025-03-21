@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { IconContext } from "react-icons";
 import { FaPauseCircle, FaPlayCircle } from "react-icons/fa";
 import { IoCloseSharp } from "react-icons/io5";
-import { FiSkipBack, FiSkipForward, FiVolume2, FiVolume, FiVolumeX, FiMaximize } from "react-icons/fi";
+import { FiSkipBack, FiSkipForward, FiVolume2, FiVolume, FiVolumeX, FiMaximize, FiMinimize } from "react-icons/fi";
 import { BiShuffle } from "react-icons/bi";
 import { IoIosRefresh } from "react-icons/io";
 import { MdOutlineRadio } from "react-icons/md";
@@ -64,6 +64,7 @@ export const Player = () => {
   const [songDetails, setSongDetails] = useState<{title?: string, duration?: string}>({});
   const [previousImage, setPreviousImage] = useState<string>('');
   const [isImageTransitioning, setIsImageTransitioning] = useState(false);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
 
   useEffect(() => {
     if (toggledSong) {
@@ -81,10 +82,54 @@ export const Player = () => {
   useEffect(() => {
     // Verificar el estado de la emisora actual cuando cambia
     if (song?.id) {
-      checkStationStatus(song.id);
-      fetchVideoDetails(song.id);
+      const handleStationChange = async () => {
+        try {
+          // Pausar la reproducción actual si hay un player activo
+          if (player) {
+            player.pauseVideo();
+          }
+
+          // Verificar estado y cargar nuevo video
+          const videoStatus = await checkVideoDetails(song.id);
+          
+          if (videoStatus.status === 'online') {
+            setSongDetails({
+              title: videoStatus.title || '',
+              duration: ''
+            });
+
+            // Si el video está disponible, cargarlo y reproducirlo
+            if (player) {
+              player.loadVideoById(song.id);
+              // Pequeño delay para asegurar que el video se cargue correctamente
+              setTimeout(() => {
+                if (isPlaying) {
+                  player.playVideo();
+                }
+              }, 1000);
+            }
+          }
+
+          // Actualizar el estado de la estación
+          setStationStatus({
+            isOnline: videoStatus.status === 'online',
+            details: videoStatus.status === 'online' ? 
+              (videoStatus.isLive ? 'Transmisión en vivo activa' : 'Video disponible') : 
+              'No disponible',
+            isLive: videoStatus.isLive
+          });
+        } catch (error) {
+          console.error("Error al cambiar de estación:", error);
+          setStationStatus({
+            isOnline: false,
+            details: 'Error al verificar estado'
+          });
+        }
+      };
+
+      handleStationChange();
     }
-  }, [song]);
+  }, [song, player, isPlaying]);
 
   // Obtener detalles del video
   const fetchVideoDetails = async (videoId: string) => {
@@ -153,6 +198,13 @@ export const Player = () => {
   const onReady = (e: any) => {
     e.target.setVolume(audioVolume * 100);
     setPlayer(e.target);
+    
+    // Si hay una canción activa y debería estar reproduciéndose, iniciarla
+    if (song?.id && isPlaying) {
+      setTimeout(() => {
+        e.target.playVideo();
+      }, 1000);
+    }
   };
 
   const onPlayVideo = () => {
@@ -318,8 +370,17 @@ export const Player = () => {
     }
   };
 
+  const togglePlayerSize = () => {
+    setIsMiniPlayer(!isMiniPlayer);
+  };
+
   return (
-    <div className="w-72 rounded-3xl overflow-hidden bg-[#1a1a1a] shadow-xl text-white sm:w-96 transition-all duration-300">
+    <div className={`
+      ${isMiniPlayer ? 'w-96 max-h-[100px]' : 'w-72 sm:w-96 max-h-[500px]'} 
+      rounded-3xl overflow-hidden bg-[#1a1a1a] shadow-xl text-white 
+      transition-all duration-500 ease-in-out transform
+      ${isMiniPlayer ? 'scale-[0.98]' : 'scale-100'}
+    `}>
       {/* Modal del Playlist */}
       {showPlaylist && (
         <div 
@@ -349,7 +410,7 @@ export const Player = () => {
               >
                 <IconContext.Provider value={{ size: "1.2rem" }}>
                   <IoCloseSharp />
-            </IconContext.Provider>
+                </IconContext.Provider>
               </button>
             </div>
             
@@ -478,171 +539,381 @@ export const Player = () => {
           </div>
         </div>
 
-        {/* Botón de cierre */}
-        <button 
-          onClick={() => setIsMusicToggled(false)}
-          className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
-          title="Cerrar reproductor"
-        >
-          <IconContext.Provider value={{ size: "1.2rem" }}>
-            <IoCloseSharp />
-          </IconContext.Provider>
-        </button>
-
-        {/* Contenido central */}
-        <div className="relative flex flex-col items-center justify-center p-8 z-10 min-h-[300px]">
-          {/* Mostrar el título solo si la estación está disponible */}
-          {(!stationStatus || stationStatus.isOnline) && (
-            <h2 className="text-2xl font-bold text-center mb-2 transition-all duration-300">{currentTitle}</h2>
-          )}
-          <p className="text-sm text-gray-300 text-center mb-3 transition-all duration-300">{currentSong?.artist}</p>
-          
-          {/* Indicador de estado */}
-          {stationStatus && (
-            <div className="flex items-center justify-center transition-all duration-300">
-              {stationStatus.isLive ? (
-                <div className="flex items-center text-[10px] text-green-400/80 bg-green-400/10 px-2 py-0.5 rounded-full">
-                  <span className="w-1 h-1 bg-green-400 rounded-full mr-1 animate-pulse"></span>
-                  EN VIVO
+        {/* MiniPlayer - Visible solo cuando isMiniPlayer es true */}
+        {isMiniPlayer && (
+          <div className="relative p-3 z-10 h-[100px]">
+            {/* Fila superior con miniatura, información y controles principales */}
+            <div className="flex items-center mb-3">
+              {/* Miniatura y área izquierda */}
+              <div className="flex items-center">
+                {/* Miniatura */}
+                <div className="w-12 h-12 min-w-[48px] mr-3 rounded-lg overflow-hidden shadow-lg">
+                  <img 
+                    src={currentImage} 
+                    alt={currentTitle} 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
-              ) : !stationStatus.isOnline && (
-                <div className="flex items-center text-[10px] text-red-400/80 bg-red-400/10 px-2 py-0.5 rounded-full">
-                  <span className="w-1 h-1 bg-red-400 rounded-full mr-1"></span>
-                  No disponible
-                </div>
-              )}
+              </div>
+              
+              {/* Información de la estación */}
+              <div className="flex-1 overflow-hidden mr-3">
+                <div className="text-sm font-semibold truncate text-white/90">{currentSong?.artist || ''}</div>
+                {stationStatus && (
+                  <div className="flex items-center">
+                    {stationStatus.isLive ? (
+                      <div className="flex items-center text-[9px] text-green-400 font-medium">
+                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+                        EN VIVO
+                      </div>
+                    ) : !stationStatus.isOnline && (
+                      <div className="flex items-center text-[9px] text-red-400 font-medium">
+                        <span className="w-1.5 h-1.5 bg-red-400 rounded-full mr-1"></span>
+                        No disponible
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Controles de reproducción y navegación */}
+              <div className="flex items-center space-x-3">
+                {/* Botón anterior */}
+                <button 
+                  onClick={playPreviousSong}
+                  className="text-white/80 hover:text-white transition-all duration-200"
+                  title="Estación anterior"
+                >
+                  <IconContext.Provider value={{ size: "1.2rem" }}>
+                    <FiSkipBack />
+                  </IconContext.Provider>
+                </button>
+                
+                {/* Botón de reproducción */}
+                <button 
+                  onClick={togglePlayPause} 
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all duration-200"
+                  title={isPlaying ? "Pausar" : "Reproducir"}
+                >
+                  <IconContext.Provider value={{ size: "1.2rem" }}>
+                    {isPlaying ? <FaPauseCircle /> : <FaPlayCircle />}
+                  </IconContext.Provider>
+                </button>
+                
+                {/* Botón siguiente */}
+                <button 
+                  onClick={playNextSong}
+                  className="text-white/80 hover:text-white transition-all duration-200"
+                  title="Siguiente estación"
+                >
+                  <IconContext.Provider value={{ size: "1.2rem" }}>
+                    <FiSkipForward />
+                  </IconContext.Provider>
+                </button>
+              </div>
+              
+              {/* Acciones: expandir y cerrar */}
+              <div className="flex items-center space-x-1.5 ml-2">
+                <button 
+                  onClick={togglePlayerSize}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Expandir reproductor"
+                >
+                  <IconContext.Provider value={{ size: "1rem" }}>
+                    <FiMaximize />
+                  </IconContext.Provider>
+                </button>
+                <button 
+                  onClick={() => setIsMusicToggled(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Cerrar reproductor"
+                >
+                  <IconContext.Provider value={{ size: "1rem" }}>
+                    <IoCloseSharp />
+                  </IconContext.Provider>
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Control de volumen */}
-        <div className="relative px-6 z-10 mb-2">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => onVolumeChange(audioVolume === 0 ? 0.5 : 0)}
-              className="text-white/80 hover:text-white transition-all duration-200"
-              title={audioVolume === 0 ? "Activar sonido" : "Silenciar"}
-            >
-              <IconContext.Provider value={{ size: "1.2rem" }}>
-                {getVolumeIcon()}
-              </IconContext.Provider>
-            </button>
             
-            <div className="flex-1">
-              <Slider
-                value={audioVolume}
-                onChange={onVolumeChange}
-                min={0}
-                max={1}
-                step={0.01}
-                railStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  height: 4,
-                  borderRadius: 2
-              }}
-              trackStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  height: 4,
-                  borderRadius: 2
-                }}
-                handleStyle={{
-                  backgroundColor: "#ffffff",
-                  border: "none",
-                  boxShadow: "0 0 10px rgba(0,0,0,0.2)",
-                  opacity: 1,
-                  height: 12,
-                  width: 12,
-                  marginTop: -4,
-                  cursor: "pointer",
-                  transition: "transform 0.2s"
-                }}
-              />
+            {/* Fila inferior con volumen y botones adicionales */}
+            <div className="flex items-center justify-between">
+              {/* Control de volumen */}
+              <div className="flex items-center gap-1.5 w-1/2">
+                <button 
+                  onClick={() => onVolumeChange(audioVolume === 0 ? 0.5 : 0)}
+                  className="text-white/80 hover:text-white transition-all duration-200"
+                  title={audioVolume === 0 ? "Activar sonido" : "Silenciar"}
+                >
+                  <IconContext.Provider value={{ size: "0.9rem" }}>
+                    {getVolumeIcon()}
+                  </IconContext.Provider>
+                </button>
+                
+                <div className="flex-1 max-w-[120px]">
+                  <Slider
+                    value={audioVolume}
+                    onChange={onVolumeChange}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    railStyle={{
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                      height: 3,
+                      borderRadius: 1.5
+                    }}
+                    trackStyle={{
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      height: 3,
+                      borderRadius: 1.5
+                    }}
+                    handleStyle={{
+                      backgroundColor: "#ffffff",
+                      border: "none",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      opacity: 1,
+                      height: 10,
+                      width: 10,
+                      marginTop: -3.5,
+                      cursor: "pointer"
+                    }}
+                  />
+                </div>
+
+                <span className="text-[8px] text-white/80 min-w-[24px] text-center font-medium">
+                  {Math.round(audioVolume * 100)}%
+                </span>
+              </div>
+              
+              {/* Botones adicionales */}
+              <div className="flex justify-end items-center space-x-2 ml-2">
+                <button 
+                  onClick={togglePlaylist}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Lista de estaciones"
+                >
+                  <IconContext.Provider value={{ size: "0.9rem" }}>
+                    <MdOutlineRadio />
+                  </IconContext.Provider>
+                </button>
+
+                <button 
+                  onClick={refreshStation}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Refrescar estación"
+                >
+                  <IconContext.Provider value={{ size: "0.9rem" }}>
+                    <IoIosRefresh />
+                  </IconContext.Provider>
+                </button>
+
+                <button 
+                  onClick={playRandomSong}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Estación aleatoria"
+                >
+                  <IconContext.Provider value={{ size: "0.9rem" }}>
+                    <BiShuffle />
+                  </IconContext.Provider>
+                </button>
+
+                <button 
+                  onClick={() => song?.id && openYoutubeUrl(song.id)}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Abrir en YouTube"
+                >
+                  <IconContext.Provider value={{ size: "0.9rem" }}>
+                    <BsYoutube />
+                  </IconContext.Provider>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón de cierre y botón de minimizar - Solo visible en modo normal */}
+        {!isMiniPlayer && (
+          <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
+            <button 
+              onClick={togglePlayerSize}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+              title="Minimizar reproductor"
+            >
+              <IconContext.Provider value={{ size: "1.2rem" }}>
+                <FiMinimize />
+              </IconContext.Provider>
+            </button>
+            <button 
+              onClick={() => setIsMusicToggled(false)}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+              title="Cerrar reproductor"
+            >
+              <IconContext.Provider value={{ size: "1.2rem" }}>
+                <IoCloseSharp />
+              </IconContext.Provider>
+            </button>
+          </div>
+        )}
+
+        {/* Contenido central - Solo visible cuando no es miniPlayer */}
+        {!isMiniPlayer && (
+          <div className="relative flex flex-col items-center justify-center p-8 z-10 min-h-[300px] transition-all duration-500 ease-in-out transform">
+            {/* Mostrar el título solo si la estación está disponible */}
+            {(!stationStatus || stationStatus.isOnline) && (
+              <h2 className="text-2xl font-bold text-center mb-2 transition-all duration-300">{currentTitle}</h2>
+            )}
+            <p className="text-sm text-gray-300 text-center mb-3 transition-all duration-300">{currentSong?.artist}</p>
+            
+            {/* Indicador de estado */}
+            {stationStatus && (
+              <div className="flex items-center justify-center transition-all duration-300">
+                {stationStatus.isLive ? (
+                  <div className="flex items-center text-[10px] text-green-400/80 bg-green-400/10 px-2 py-0.5 rounded-full">
+                    <span className="w-1 h-1 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+                    EN VIVO
+                  </div>
+                ) : !stationStatus.isOnline && (
+                  <div className="flex items-center text-[10px] text-red-400/80 bg-red-400/10 px-2 py-0.5 rounded-full">
+                    <span className="w-1 h-1 bg-red-400 rounded-full mr-1"></span>
+                    No disponible
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Control de volumen - Solo visible cuando no es miniPlayer */}
+        {!isMiniPlayer && (
+          <div className="relative px-6 z-10 mb-2">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => onVolumeChange(audioVolume === 0 ? 0.5 : 0)}
+                className="text-white/80 hover:text-white transition-all duration-200"
+                title={audioVolume === 0 ? "Activar sonido" : "Silenciar"}
+              >
+                <IconContext.Provider value={{ size: "1.2rem" }}>
+                  {getVolumeIcon()}
+                </IconContext.Provider>
+              </button>
+              
+              <div className="flex-1">
+                <Slider
+                  value={audioVolume}
+                  onChange={onVolumeChange}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  railStyle={{
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    height: 4,
+                    borderRadius: 2
+                  }}
+                  trackStyle={{
+                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                    height: 4,
+                    borderRadius: 2
+                  }}
+                  handleStyle={{
+                    backgroundColor: "#ffffff",
+                    border: "none",
+                    boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+                    opacity: 1,
+                    height: 12,
+                    width: 12,
+                    marginTop: -4,
+                    cursor: "pointer",
+                    transition: "transform 0.2s"
+                  }}
+                />
+              </div>
+
+              <span className="text-xs text-white/80 min-w-[40px] text-right">
+                {Math.round(audioVolume * 100)}%
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Controles principales y adicionales - Solo visibles cuando no es miniPlayer */}
+        {!isMiniPlayer && (
+          <div className="relative p-8 pt-4 z-10">
+            {/* Controles de navegación */}
+            <div className="flex justify-center items-center gap-8 mb-6">
+              <button 
+                onClick={playPreviousSong}
+                className="text-white/80 hover:text-white transition-all duration-200 hover:scale-110"
+                title="Estación anterior"
+              >
+                <IconContext.Provider value={{ size: "2rem" }}>
+                  <FiSkipBack />
+                </IconContext.Provider>
+              </button>
+
+              <button 
+                onClick={togglePlayPause} 
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                title={isPlaying ? "Pausar" : "Reproducir"}
+              >
+                <IconContext.Provider value={{ size: "1.8rem" }}>
+                  {isPlaying ? <FaPauseCircle /> : <FaPlayCircle />}
+                </IconContext.Provider>
+              </button>
+
+              <button 
+                onClick={playNextSong}
+                className="text-white/80 hover:text-white transition-all duration-200 hover:scale-110"
+                title="Siguiente estación"
+              >
+                <IconContext.Provider value={{ size: "2rem" }}>
+                  <FiSkipForward />
+                </IconContext.Provider>
+              </button>
             </div>
 
-            <span className="text-xs text-white/80 min-w-[40px] text-right">
-              {Math.round(audioVolume * 100)}%
-            </span>
-          </div>
+            {/* Controles adicionales */}
+            <div className="flex justify-between items-center px-4">
+              <button 
+                onClick={togglePlaylist}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+                title="Lista de estaciones"
+              >
+                <IconContext.Provider value={{ size: "1.2rem" }}>
+                  <MdOutlineRadio />
+                </IconContext.Provider>
+              </button>
+
+              <button 
+                onClick={refreshStation}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+                title="Refrescar estación"
+              >
+                <IconContext.Provider value={{ size: "1.2rem" }}>
+                  <IoIosRefresh />
+                </IconContext.Provider>
+              </button>
+
+              <button 
+                onClick={playRandomSong}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+                title="Estación aleatoria"
+              >
+                <IconContext.Provider value={{ size: "1.2rem" }}>
+                  <BiShuffle />
+                </IconContext.Provider>
+              </button>
+
+              <button 
+                onClick={() => song?.id && openYoutubeUrl(song.id)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
+                title="Abrir en YouTube"
+              >
+                <IconContext.Provider value={{ size: "1.2rem" }}>
+                  <BsYoutube />
+                </IconContext.Provider>
+              </button>
+            </div>
         </div>
-
-        {/* Controles principales y adicionales */}
-        <div className="relative p-8 pt-4 z-10">
-          {/* Controles de navegación */}
-          <div className="flex justify-center items-center gap-8 mb-6">
-            <button 
-              onClick={playPreviousSong}
-              className="text-blue-900/90 hover:text-blue-800 transition-all duration-200 hover:scale-110"
-              title="Estación anterior"
-            >
-              <IconContext.Provider value={{ size: "2rem" }}>
-                <FiSkipBack />
-              </IconContext.Provider>
-            </button>
-
-            <button 
-              onClick={togglePlayPause} 
-              className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-900/60 text-white hover:bg-blue-800/70 transition-all duration-200 hover:scale-105 hover:shadow-lg"
-              title={isPlaying ? "Pausar" : "Reproducir"}
-            >
-              <IconContext.Provider value={{ size: "1.8rem" }}>
-                {isPlaying ? <FaPauseCircle /> : <FaPlayCircle />}
-              </IconContext.Provider>
-            </button>
-
-            <button 
-              onClick={playNextSong}
-              className="text-blue-900/90 hover:text-blue-800 transition-all duration-200 hover:scale-110"
-              title="Siguiente estación"
-            >
-              <IconContext.Provider value={{ size: "2rem" }}>
-                <FiSkipForward />
-              </IconContext.Provider>
-            </button>
-          </div>
-
-          {/* Controles adicionales */}
-          <div className="flex justify-between items-center px-4">
-            <button 
-              onClick={togglePlaylist}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
-              title="Lista de estaciones"
-            >
-              <IconContext.Provider value={{ size: "1.2rem" }}>
-                <MdOutlineRadio />
-              </IconContext.Provider>
-            </button>
-
-            <button 
-              onClick={refreshStation}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
-              title="Refrescar estación"
-            >
-              <IconContext.Provider value={{ size: "1.2rem" }}>
-                <IoIosRefresh />
-              </IconContext.Provider>
-            </button>
-
-            <button 
-              onClick={playRandomSong}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
-              title="Estación aleatoria"
-            >
-              <IconContext.Provider value={{ size: "1.2rem" }}>
-                <BiShuffle />
-              </IconContext.Provider>
-            </button>
-
-            <button 
-              onClick={() => song?.id && openYoutubeUrl(song.id)}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/40 transition-all duration-200 hover:scale-105"
-              title="Abrir en YouTube"
-            >
-              <IconContext.Provider value={{ size: "1.2rem" }}>
-                <BsYoutube />
-              </IconContext.Provider>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       <YouTube
@@ -683,6 +954,28 @@ export const Player = () => {
             to {
               transform: translateY(20px);
               opacity: 0;
+            }
+          }
+
+          @keyframes minimizePlayer {
+            from {
+              transform: scale(1);
+              max-height: 500px;
+            }
+            to {
+              transform: scale(0.98);
+              max-height: 100px;
+            }
+          }
+
+          @keyframes maximizePlayer {
+            from {
+              transform: scale(0.98);
+              max-height: 100px;
+            }
+            to {
+              transform: scale(1);
+              max-height: 500px;
             }
           }
         `}
