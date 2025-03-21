@@ -234,20 +234,24 @@ export const useStickyNote = create<IStickyNoteState>(
     (set, _) => ({
       stickyNotes: [],
       addStickyNote: (text: string) => {
-        set(state => ({
-          stickyNotes: [
-            ...state.stickyNotes,
-            {
-              id: Date.now() + state.stickyNotes.length,
-              text: text,
-              color: ColorOptions.Yellow,
-              stickyNotesPosX: 165,
-              stickyNotesPosY: 0,
-              width: 340,
-              height: 200
-            } as IStickyNote,
-          ],
-        }));
+        set(state => {
+          const noteNumber = state.stickyNotes.length + 1;
+          return {
+            stickyNotes: [
+              ...state.stickyNotes,
+              {
+                id: Date.now() + state.stickyNotes.length,
+                text: text,
+                title: `Nota ${noteNumber}`,
+                color: ColorOptions.Yellow,
+                stickyNotesPosX: 165,
+                stickyNotesPosY: 0,
+                width: 340,
+                height: 200
+              } as IStickyNote,
+            ],
+          };
+        });
       },
       editNote: (id, newProp, newValue) => {
         set(state => ({

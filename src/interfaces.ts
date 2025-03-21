@@ -66,6 +66,7 @@ export interface IStickyNote {
   id: number;
   text: string;
   color: string;
+  title?: string;
   stickyNotesPosX: number;
   stickyNotesPosY: number;
   width: number;

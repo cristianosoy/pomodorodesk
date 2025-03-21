@@ -15,10 +15,31 @@ interface StickyProps {
   setIsDragging: (isDragging: boolean) => void;
 }
 
+// Función para oscurecer un color hexadecimal
+const darkenColor = (color: string, amount: number = 30): string => {
+  // Remover el signo # si existe
+  color = color.replace('#', '');
+  
+  // Convertir a valores RGB
+  let r = parseInt(color.substring(0, 2), 16);
+  let g = parseInt(color.substring(2, 4), 16);
+  let b = parseInt(color.substring(4, 6), 16);
+  
+  // Oscurecer cada componente
+  r = Math.max(0, r - amount);
+  g = Math.max(0, g - amount);
+  b = Math.max(0, b - amount);
+  
+  // Convertir de nuevo a formato hexadecimal
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   const { removeNote, editNote, stickyNotes, setStickyNotesSize } = useStickyNote();
   const { setAreWidgetsLocked } = useLockWidgetsStore();
   const [showColorSelector, setShowColorSelector] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [noteTitle, setNoteTitle] = useState(`Nota ${Math.floor(Math.random() * 100) + 1}`);
   const currentNote = stickyNotes.find(note => note.id === id);
   const [size, setSize] = useState({ 
     width: currentNote?.width || 215, 
@@ -32,6 +53,10 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         width: currentNote.width, 
         height: currentNote.height 
       });
+      // Cargar el título guardado si existe
+      if (currentNote.title) {
+        setNoteTitle(currentNote.title);
+      }
     }
   }, [currentNote]);
 
@@ -45,6 +70,56 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   const selectColor = (selectedColor: string) => {
     editNote(id, "color", selectedColor);
     setShowColorSelector(!showColorSelector);
+  };
+
+  // Maneja el doble clic para editar el título
+  const handleTitleDoubleClick = () => {
+    setIsEditingTitle(true);
+  };
+
+  // Maneja el cambio de título
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNoteTitle(e.target.value);
+  };
+
+  // Generar un título aleatorio si está vacío
+  const generateRandomTitle = (): string => {
+    const titleOptions = [
+      `Nota ${Math.floor(Math.random() * 100) + 1}`,
+      `Recordatorio ${Math.floor(Math.random() * 50) + 1}`,
+      `Idea ${Math.floor(Math.random() * 30) + 1}`,
+      `Tarea ${Math.floor(Math.random() * 20) + 1}`,
+      `Pendiente ${Math.floor(Math.random() * 10) + 1}`
+    ];
+    return titleOptions[Math.floor(Math.random() * titleOptions.length)];
+  };
+
+  // Maneja el fin de la edición del título
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+    // Si el título está vacío, generar uno aleatorio
+    if (!noteTitle.trim()) {
+      const newTitle = generateRandomTitle();
+      setNoteTitle(newTitle);
+      editNote(id, "title", newTitle);
+    } else {
+      editNote(id, "title", noteTitle);
+    }
+  };
+
+  // Maneja la tecla enter para terminar la edición del título
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setIsEditingTitle(false);
+      // Si el título está vacío, generar uno aleatorio
+      if (!noteTitle.trim()) {
+        const newTitle = generateRandomTitle();
+        setNoteTitle(newTitle);
+        editNote(id, "title", newTitle);
+      } else {
+        editNote(id, "title", noteTitle);
+      }
+    }
   };
 
   // Handles resize start
@@ -76,7 +151,7 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         {Object.values(ColorOptions).map(c => (
           <div
             key={c}
-            className="h-10 w-10 cursor-pointer"
+            className="h-8 w-8 cursor-pointer"
             style={{ backgroundColor: c }}
             onClick={() => selectColor(c)}
           />
@@ -99,14 +174,41 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         className="sticky-container"
         style={{ backgroundColor: color }}
       >
-        <div className="handle-drag drag-handle">
+        <div className="handle-drag drag-handle" style={{ 
+          backgroundColor: darkenColor(color),
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+        }}>
           {showColorSelector && displayColors()}
-          <div className="flex w-full justify-end p-2">
-            <IoEllipsisHorizontalSharp className="mr-2 cursor-pointer" onClick={handleToggleSelector} />
-            <IoCloseSharp className="cursor-pointer text-red-500 hover:bg-red-200" onClick={() => removeNote(id)} />
+          <div className="flex w-full items-center justify-between p-1">
+            <div className="ml-2 text-sm font-medium truncate note-title" style={{ maxWidth: 'calc(100% - 60px)' }}>
+              {isEditingTitle ? (
+                <input
+                  type="text"
+                  value={noteTitle}
+                  onChange={handleTitleChange}
+                  onBlur={handleTitleBlur}
+                  onKeyDown={handleTitleKeyDown}
+                  className="w-full bg-transparent border-none focus:outline-none px-1"
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
+                />
+              ) : (
+                <span 
+                  onDoubleClick={handleTitleDoubleClick}
+                  className="cursor-text inline-block w-full"
+                  title="Doble clic para editar"
+                >
+                  {noteTitle}
+                </span>
+              )}
+            </div>
+            <div className="flex">
+              <IoEllipsisHorizontalSharp className="mr-2 cursor-pointer" size={18} onClick={handleToggleSelector} />
+              <IoCloseSharp className="cursor-pointer text-red-500 hover:bg-red-200" size={18} onClick={() => removeNote(id)} />
+            </div>
           </div>
         </div>
-        <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 40px)', overflow: 'hidden', position: 'relative' }}>
+        <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 32px)', overflow: 'hidden', position: 'relative' }}>
           <RichTextEditor
             value={text}
             onChange={(value) => {
