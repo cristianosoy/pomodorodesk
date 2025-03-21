@@ -342,3 +342,16 @@ export interface ISeoContent {
 export interface ISeoToggle {
     onButtonClick: () => void;
 }
+
+export interface IAIConfig {
+  provider: 'google';
+  model: string;
+  apiKey: string;
+  promptTemplate?: string;
+}
+
+export interface IAIConfigStore {
+  aiConfig: IAIConfig | null;
+  setAIConfig: (config: IAIConfig) => void;
+  clearAIConfig: () => void;
+}

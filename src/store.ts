@@ -44,6 +44,7 @@ import {
   IPosKanban,
   ISeoContent,
   IKanbanBoardState,
+  IAIConfigStore,
 } from "./interfaces";
 import { InfoSection } from "./pages/InfoSection";
 import { uuid } from "uuidv4";
@@ -972,5 +973,21 @@ export const useSeoVisibilityStore = create<ISeoContent>(
       setSeoVisibility: isSeoVisible => set({ isSeoVisible }),
     }),
     { name: "state_seo_visibility" }
+  )
+);
+
+/**
+ * AI Configuration Store
+ * ---
+ * Handle AI provider configuration
+ */
+export const useAIConfig = create<IAIConfigStore>(
+  persist(
+    (set) => ({
+      aiConfig: null,
+      setAIConfig: (config) => set({ aiConfig: config }),
+      clearAIConfig: () => set({ aiConfig: null }),
+    }),
+    { name: "ai_config" }
   )
 );
