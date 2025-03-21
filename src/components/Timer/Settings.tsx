@@ -70,6 +70,7 @@ export const TimerSettings = ({ onClose }) => {
   const [currentSongs, setCurrentSongs] = useState<ISongTask[]>(songs);
   const [newStationId, setNewStationId] = useState("");
   const [newStationName, setNewStationName] = useState("");
+  const [newStationImage, setNewStationImage] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [stationStatuses, setStationStatuses] = useState<Record<string, { isOnline: boolean, details?: string}>>({});
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
@@ -299,7 +300,8 @@ export const TimerSettings = ({ onClose }) => {
       updatedSongs[editingIndex] = {
         id: newStationId,
         artist: newStationName,
-        link: `https://www.youtube.com/watch?v=${newStationId}`
+        link: `https://www.youtube.com/watch?v=${newStationId}`,
+        image: newStationImage || undefined
       };
       setCurrentSongs(updatedSongs);
       successToast("Estación actualizada", isDark);
@@ -310,7 +312,8 @@ export const TimerSettings = ({ onClose }) => {
         {
           id: newStationId,
           artist: newStationName,
-          link: `https://www.youtube.com/watch?v=${newStationId}`
+          link: `https://www.youtube.com/watch?v=${newStationId}`,
+          image: newStationImage || undefined
         }
       ]);
       successToast("Estación añadida", isDark);
@@ -319,6 +322,7 @@ export const TimerSettings = ({ onClose }) => {
     // Reset form
     setNewStationId("");
     setNewStationName("");
+    setNewStationImage("");
     setEditingIndex(null);
   }
 
@@ -326,6 +330,7 @@ export const TimerSettings = ({ onClose }) => {
     const station = currentSongs[index];
     setNewStationId(station.id);
     setNewStationName(station.artist);
+    setNewStationImage(station.image || "");
     setEditingIndex(index);
   }
 
@@ -342,6 +347,7 @@ export const TimerSettings = ({ onClose }) => {
     if (editingIndex === index) {
       setNewStationId("");
       setNewStationName("");
+      setNewStationImage("");
       setEditingIndex(null);
     }
   }
@@ -680,6 +686,7 @@ export const TimerSettings = ({ onClose }) => {
                           <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID YouTube</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen</th>
                           <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                         </tr>
                       </thead>
@@ -693,20 +700,23 @@ export const TimerSettings = ({ onClose }) => {
                                 <div 
                                   className={`w-3 h-3 mx-auto ${stationStatuses[station.id]?.isOnline ? 'bg-green-500' : 'bg-red-500'} rounded-full`}
                                   title={stationStatuses[station.id]?.details}
-                                  onClick={() => checkStationStatus(station.id)}
                                 ></div>
                               )}
                             </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{station.artist}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{station.id}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-right text-sm">
-                              <button
-                                onClick={() => openYoutubeUrl(station.id)}
-                                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 mr-2"
-                                title="Abrir en YouTube"
-                              >
-                                Ver
-                              </button>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">{station.artist}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm font-mono">
+                              <span className="cursor-pointer text-blue-500 hover:underline" onClick={() => openYoutubeUrl(station.id)}>
+                                {station.id}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-center">
+                              {station.image ? (
+                                <span className="text-green-500" title={station.image}>✓</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-right">
                               <button
                                 onClick={() => editStation(index)}
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-2"
@@ -785,12 +795,37 @@ export const TimerSettings = ({ onClose }) => {
                     />
                   </div>
                   
+                  <div className="mt-3">
+                    <label className="block text-sm mb-1">Imagen personalizada (opcional)</label>
+                    <div className="flex">
+                      <input
+                        type="text"
+                        value={newStationImage}
+                        onChange={(e) => setNewStationImage(e.target.value)}
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                        className="flex-1 px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
+                      />
+                      {newStationImage && (
+                        <button
+                          onClick={() => setNewStationImage("")}
+                          className="ml-2 px-3 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm"
+                        >
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Si no se especifica, se usará la miniatura del video de YouTube
+                    </p>
+                  </div>
+                  
                   <div className="flex justify-end pt-2">
                     {editingIndex !== null && (
                       <button
                         onClick={() => {
                           setNewStationId("");
                           setNewStationName("");
+                          setNewStationImage("");
                           setEditingIndex(null);
                         }}
                         className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm mr-2"

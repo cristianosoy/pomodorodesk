@@ -229,8 +229,25 @@ export const Player = () => {
   // Obtener la imagen actual (personalizada o miniatura de YouTube)
   const currentSongIndex = songs.findIndex(s => s.id === song?.id);
   const currentSong = currentSongIndex >= 0 ? songs[currentSongIndex] : null;
-  const currentImage = currentSong?.image || (song?.id ? getYouTubeThumbnail(song.id, 'high') : '');
+  
+  // Garantizar que se use correctamente la imagen personalizada si existe
+  const hasCustomImage = !!(currentSong?.image);
+  const currentImage = hasCustomImage 
+    ? currentSong?.image 
+    : (song?.id ? getYouTubeThumbnail(song.id, 'high') : '');
+  
   const currentTitle = songDetails?.title || currentSong?.artist || '';
+  
+  // Logs para depuración
+  useEffect(() => {
+    console.log("Song ID actual:", song?.id);
+    console.log("Songs disponibles:", songs);
+    console.log("Índice de la canción actual:", currentSongIndex);
+    console.log("Canción actual:", currentSong);
+    console.log("¿Tiene imagen personalizada?:", hasCustomImage);
+    console.log("Imagen personalizada:", currentSong?.image);
+    console.log("Imagen que se está usando:", currentImage);
+  }, [song, songs, currentSong, currentImage, hasCustomImage]);
 
   // Efecto para manejar la transición de imágenes
   useEffect(() => {
@@ -401,6 +418,7 @@ export const Player = () => {
           {/* Imagen actual */}
           <div className={`absolute inset-0 ${isImageTransitioning ? 'animate-[fadeIn_500ms_ease-out]' : ''}`}>
             <img 
+              key={currentImage}
               src={currentImage} 
               alt={currentTitle} 
               className="absolute w-full h-full object-cover object-center scale-150" 
@@ -409,6 +427,14 @@ export const Player = () => {
                 left: '-25%',
                 width: '150%',
                 height: '150%'
+              }}
+              onError={() => {
+                console.error("Error cargando imagen:", currentImage);
+                // Si falla la carga y es una imagen personalizada, intentar con la miniatura
+                if (hasCustomImage && song?.id) {
+                  const fallbackImage = getYouTubeThumbnail(song.id, 'high');
+                  console.log("Usando imagen de respaldo:", fallbackImage);
+                }
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1a1a1a]/70 to-[#1a1a1a]"></div>
