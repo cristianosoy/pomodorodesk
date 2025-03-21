@@ -37,7 +37,6 @@ const darkenColor = (color: string, amount: number = 30): string => {
 export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   const { removeNote, editNote, stickyNotes, setStickyNotesSize } = useStickyNote();
   const { setAreWidgetsLocked } = useLockWidgetsStore();
-  const [showColorSelector, setShowColorSelector] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [noteTitle, setNoteTitle] = useState(`Nota ${Math.floor(Math.random() * 100) + 1}`);
   const currentNote = stickyNotes.find(note => note.id === id);
@@ -60,26 +59,9 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     }
   }, [currentNote]);
 
-  // Toggles the state of the color selector open/closed
-  const handleToggleSelector: MouseEventHandler<SVGElement> = event => {
-    event.stopPropagation();
-    setShowColorSelector(!showColorSelector);
-  };
-
-  // Sets the selected color and closes the color selector
+  // Sets the selected color
   const selectColor = (selectedColor: string) => {
     editNote(id, "color", selectedColor);
-    setShowColorSelector(!showColorSelector);
-  };
-
-  // Maneja el doble clic para editar el título
-  const handleTitleDoubleClick = () => {
-    setIsEditingTitle(true);
-  };
-
-  // Maneja el cambio de título
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNoteTitle(e.target.value);
   };
 
   // Generar un título aleatorio si está vacío
@@ -92,6 +74,16 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
       `Pendiente ${Math.floor(Math.random() * 10) + 1}`
     ];
     return titleOptions[Math.floor(Math.random() * titleOptions.length)];
+  };
+
+  // Maneja el doble clic para editar el título
+  const handleTitleDoubleClick = () => {
+    setIsEditingTitle(true);
+  };
+
+  // Maneja el cambio de título
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNoteTitle(e.target.value);
   };
 
   // Maneja el fin de la edición del título
@@ -144,22 +136,6 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     }
   };
 
-  // Renders a row of color elements
-  const displayColors = () => {
-    return (
-      <div className="mb-1 flex">
-        {Object.values(ColorOptions).map(c => (
-          <div
-            key={c}
-            className="h-8 w-8 cursor-pointer"
-            style={{ backgroundColor: c }}
-            onClick={() => selectColor(c)}
-          />
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="sticky-wrapper" style={{ width: size.width, height: size.height }}>
       <ResizableBox
@@ -174,41 +150,56 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         className="sticky-container"
         style={{ backgroundColor: color }}
       >
-        <div className="handle-drag drag-handle" style={{ 
+        <div className="handle-drag" style={{ 
           backgroundColor: darkenColor(color),
           borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
         }}>
-          {showColorSelector && displayColors()}
-          <div className="flex w-full items-center justify-between p-1">
-            <div className="ml-2 text-sm font-medium truncate note-title" style={{ maxWidth: 'calc(100% - 60px)' }}>
-              {isEditingTitle ? (
-                <input
-                  type="text"
-                  value={noteTitle}
-                  onChange={handleTitleChange}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={handleTitleKeyDown}
-                  className="w-full bg-transparent border-none focus:outline-none px-1"
-                  autoFocus
-                  onFocus={(e) => e.target.select()}
-                />
-              ) : (
-                <span 
-                  onDoubleClick={handleTitleDoubleClick}
-                  className="cursor-text inline-block w-full"
-                  title="Doble clic para editar"
-                >
-                  {noteTitle}
-                </span>
-              )}
+          <div className="flex w-full items-center p-1">
+            <div className="drag-handle flex-grow flex items-center mr-2" style={{ minWidth: 0 }}>
+              <div className="ml-2 text-sm font-medium truncate note-title" style={{ maxWidth: '100%' }}>
+                {isEditingTitle ? (
+                  <input
+                    type="text"
+                    value={noteTitle}
+                    onChange={handleTitleChange}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={handleTitleKeyDown}
+                    className="w-full bg-transparent border-none focus:outline-none px-1 cancelDrag font-bold"
+                    autoFocus
+                    onFocus={(e) => e.target.select()}
+                  />
+                ) : (
+                  <span 
+                    onDoubleClick={handleTitleDoubleClick}
+                    className="cursor-text inline-block w-full font-bold"
+                    title="Doble clic para editar"
+                  >
+                    {noteTitle}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex">
-              <IoEllipsisHorizontalSharp className="mr-2 cursor-pointer" size={18} onClick={handleToggleSelector} />
-              <IoCloseSharp className="cursor-pointer text-red-500 hover:bg-red-200" size={18} onClick={() => removeNote(id)} />
+            <div className="flex items-center no-drag">
+              <div className="flex mr-2 color-dots">
+                {Object.values(ColorOptions).map(c => (
+                  <div
+                    key={c}
+                    className={`color-dot ${color === c ? 'active' : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => selectColor(c)}
+                    title="Cambiar color"
+                  />
+                ))}
+              </div>
+              <IoCloseSharp 
+                className="cursor-pointer text-red-500 hover:bg-red-200" 
+                size={18} 
+                onClick={() => removeNote(id)}
+              />
             </div>
           </div>
         </div>
-        <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 32px)', overflow: 'hidden', position: 'relative' }}>
+        <div className="editor-content m-auto break-words rounded pl-4 pb-4 pr-4" style={{ overflow: 'hidden', position: 'relative' }}>
           <RichTextEditor
             value={text}
             onChange={(value) => {
