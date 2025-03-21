@@ -45,9 +45,9 @@ export const AddTask = () => {
   return (
     <form className="mb-8 mt-2" onSubmit={e => onSubmit(e)}>
       <div className="my-5">
-        <label className="block">Task</label>
+        <label className="block text-gray-800 dark:text-gray-200">Task</label>
         <input
-          className="cancelDrag m-1 h-10 w-full border border-gray-300 py-2 px-3 text-lg dark:border-gray-500 dark:bg-gray-700"
+          className="cancelDrag m-1 h-10 w-full border border-gray-300 py-2 px-3 text-lg dark:border-gray-500 dark:bg-gray-700 dark:text-gray-200"
           type="text"
           placeholder="Add Task"
           value={charCount}
@@ -56,19 +56,29 @@ export const AddTask = () => {
             setFormattedContent(e.target.value);
           }}
         />
-        <p className="m-1">
+        <p className="m-1 text-gray-600 dark:text-gray-400">
           {charCount.length}/{limit}
         </p>
       </div>
       <div className="my-5 flex items-center justify-center">
-        <label className="flex-1">Set Pomodoro Counts</label>
-        <div className="bg-gray-200 dark:bg-gray-700 dark:text-gray-200">
+        <label className="flex-1 text-gray-800 dark:text-gray-200">Set Pomodoro Counts</label>
+        <div className="bg-gray-200 dark:bg-gray-700 dark:text-gray-200 rounded-md">
           <div className="flex space-x-5 p-2">
-            <button type="button" id="pomodoro-decrement" onClick={e => handlePomodoroChange(e)}>
+            <button 
+              type="button" 
+              id="pomodoro-decrement" 
+              onClick={e => handlePomodoroChange(e)}
+              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 transition-colors"
+            >
               &lt;
             </button>
-            <div>{pomoCounter}</div>
-            <button type="button" id="pomodoro-increment" onClick={e => handlePomodoroChange(e)}>
+            <div className="font-medium">{pomoCounter}</div>
+            <button 
+              type="button" 
+              id="pomodoro-increment" 
+              onClick={e => handlePomodoroChange(e)}
+              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 transition-colors"
+            >
               &gt;
             </button>
           </div>
