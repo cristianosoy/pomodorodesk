@@ -311,6 +311,7 @@ export const useTask = create<ITaskState>(
   persist(
     (set, _) => ({
       tasks: [],
+      taskSortOrder: 'default',
       addTask: (description: string, count: number, isBreak: boolean) => {
         set(state => ({
           tasks: [
@@ -389,19 +390,21 @@ export const useTask = create<ITaskState>(
         }));
       },
       updateTaskTime: () => {
-        set(state => ({
-          tasks: state.tasks.map(task => {
+        set(state => {
+          const updatedTasks = [...state.tasks].map(task => {
             if (task.inProgress && task.startTime) {
-              const elapsedTime = Math.floor((Date.now() - task.startTime) / 1000);
+              const elapsedSeconds = Math.floor((Date.now() - task.startTime) / 1000);
               return {
                 ...task,
-                timeSpentSeconds: task.timeSpentSeconds + elapsedTime,
-                startTime: Date.now(),
-              } as ITask;
+                timeSpentSeconds: (task.timeSpentSeconds || 0) + elapsedSeconds,
+                startTime: Date.now(), // Actualizar el startTime para el siguiente cálculo
+              };
             }
             return task;
-          }),
-        }));
+          });
+          
+          return { tasks: updatedTasks };
+        });
       },
       setCompleted: (id, flag) => {
         set(state => ({
@@ -466,6 +469,9 @@ export const useTask = create<ITaskState>(
       },
       reorderTasks: (tasks) => {
         set({ tasks });
+      },
+      setTaskSortOrder: (order) => {
+        set({ taskSortOrder: order });
       },
     }),
     { name: "user_tasks" }

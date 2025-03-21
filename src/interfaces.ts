@@ -110,6 +110,7 @@ export interface ITask {
 
 export interface ITaskState {
   tasks: ITask[];
+  taskSortOrder: 'default' | 'completedFirst' | 'completedLast';
   addTask: (description: string, count: number, isBreak: boolean) => void;
   renameTask: (id: number, newName: string) => void;
   removeTask: (id: number) => void;
@@ -123,6 +124,7 @@ export interface ITaskState {
   toggleMenu: (id: number, flag: boolean) => void;
   reorderTasks: (tasks: ITask[]) => void;
   updateTaskTime: () => void;
+  setTaskSortOrder: (order: 'default' | 'completedFirst' | 'completedLast') => void;
 }
 
 export interface IKanbanBoard {
