@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
+import Strike from '@tiptap/extension-strike';
 import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl } from 'react-icons/bs';
 import { HiMiniPencilSquare } from 'react-icons/hi2';
 import { BiUndo, BiRedo } from 'react-icons/bi';
@@ -45,6 +46,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
         },
       }),
       Underline,
+      Strike,
       Highlight.configure({ multicolor: false }),
       Placeholder.configure({
         placeholder,
@@ -120,6 +122,14 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
             <BsTypeUnderline size={16} />
           </button>
           <button
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            className={editor.isActive('strike') ? 'is-active' : ''}
+            type="button"
+            title="Strike"
+          >
+            S
+          </button>
+          <button
             onClick={() => editor.chain().focus().toggleHighlight().run()}
             className={editor.isActive('highlight') ? 'is-active' : ''}
             type="button"
@@ -152,7 +162,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
             <BsListOl size={16} />
           </button>
         </div>
-        <EditorContent editor={editor} />
+        <div className="editor-content">
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </>
   );

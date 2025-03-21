@@ -106,7 +106,7 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
             <IoCloseSharp className="cursor-pointer text-red-500 hover:bg-red-200" onClick={() => removeNote(id)} />
           </div>
         </div>
-        <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 40px)', overflow: 'auto' }}>
+        <div className="no-drag m-auto break-words rounded pl-4 pb-4 pr-4" style={{ height: 'calc(100% - 40px)', overflow: 'hidden', position: 'relative' }}>
           <RichTextEditor
             value={text}
             onChange={(value) => {
