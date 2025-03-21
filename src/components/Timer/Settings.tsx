@@ -19,13 +19,16 @@ import { BsMusicPlayerFill, BsBellFill } from "react-icons/bs";
 import { GiPanFlute } from "react-icons/gi";
 import { CgPiano } from "react-icons/cg";
 import { FiClock, FiSettings, FiVolume2 } from "react-icons/fi";
-import { BiBot } from "react-icons/bi";
+import { BiBot, BiMusic } from "react-icons/bi";
 import { Button } from "@Components/Common/Button";
 import { ToggleOption } from "./ToggleOption";
 import { successToast, failureToast } from "@App/utils/toast";
 import useSetDefault from "@App/utils/hooks/useSetDefault";
 import clsx from "clsx";
 import { aiService, GeminiModel } from "@Root/src/services/ai";
+import { ISongTask } from "@Root/src/interfaces";
+import { useSongLibrary } from "@Root/src/store";
+import { verifyVideoExistence, checkVideoDetails } from "@Root/src/services/youtube";
 
 import piano from "/assets/music/piano.wav";
 import flute from "/assets/music/flute.wav";
@@ -33,7 +36,7 @@ import arcade from "/assets/music/arcade.wav";
 import bells from "/assets/music/bells.wav";
 
 // Tipo para las pestañas
-type TabType = "time" | "alarm" | "layout" | "ai";
+type TabType = "time" | "alarm" | "layout" | "ai" | "music";
 
 export const TimerSettings = ({ onClose }) => {
   const { isDark } = useDarkToggleStore();
@@ -63,6 +66,14 @@ export const TimerSettings = ({ onClose }) => {
   );
   const [availableModels, setAvailableModels] = useState<GeminiModel[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const { songs, setSongs, resetSongs } = useSongLibrary();
+  const [currentSongs, setCurrentSongs] = useState<ISongTask[]>(songs);
+  const [newStationId, setNewStationId] = useState("");
+  const [newStationName, setNewStationName] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [stationStatuses, setStationStatuses] = useState<Record<string, { isOnline: boolean, details?: string}>>({});
+  const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
+  const [youtubeApiKey, setYoutubeApiKey] = useState<string>(localStorage.getItem('youtube_api_key') || '');
   
   // Estado para la pestaña actual
   const [activeTab, setActiveTab] = useState<TabType>("time");
@@ -91,6 +102,69 @@ export const TimerSettings = ({ onClose }) => {
 
     loadModels();
   }, [currentApiKey]);
+
+  useEffect(() => {
+    // Verificar estados de las emisoras al cargar
+    if (currentSongs.length > 0) {
+      currentSongs.forEach(song => {
+        checkStationStatus(song.id);
+      });
+    }
+  }, []);
+
+  // Función para verificar si una emisora está en línea
+  const checkStationStatus = async (id: string) => {
+    setCheckingStatus(id);
+    try {
+      // Verificar estado completo del video
+      const videoStatus = await checkVideoDetails(id);
+      
+      // Determinar el estado detallado para mostrar como tooltip
+      let details = '';
+      
+      if (videoStatus.status === 'online') {
+        if (videoStatus.isLive) {
+          details = 'Transmisión en vivo activa';
+          if (videoStatus.details?.streamStatus) {
+            details += ` (${videoStatus.details.streamStatus})`;
+          }
+        } else {
+          details = 'Video disponible (no es transmisión en vivo)';
+        }
+      } else if (videoStatus.status === 'offline') {
+        details = 'No disponible';
+        if (videoStatus.details?.streamStatus) {
+          details += ` (${videoStatus.details.streamStatus})`;
+        }
+      } else {
+        details = 'Estado desconocido';
+      }
+      
+      setStationStatuses(prev => ({
+        ...prev,
+        [id]: {
+          isOnline: videoStatus.status === 'online',
+          details
+        }
+      }));
+    } catch (error) {
+      console.error("Error verificando estado de la emisora:", error);
+      setStationStatuses(prev => ({
+        ...prev,
+        [id]: {
+          isOnline: false,
+          details: 'Error al verificar estado'
+        }
+      }));
+    } finally {
+      setCheckingStatus(null);
+    }
+  };
+
+  // Función para abrir la URL de YouTube
+  const openYoutubeUrl = (id: string) => {
+    window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
+  };
 
   function onDefaultChange() {
     if (currentGrid === null) {
@@ -131,6 +205,15 @@ export const TimerSettings = ({ onClose }) => {
     } else {
       clearAIConfig();
     }
+    
+    // Guardar la clave de API de YouTube
+    if (youtubeApiKey) {
+      localStorage.setItem('youtube_api_key', youtubeApiKey);
+    } else {
+      localStorage.removeItem('youtube_api_key');
+    }
+    
+    setSongs(currentSongs);
     onClose();
     successToast("Settings saved", isDark);
   }
@@ -157,6 +240,8 @@ export const TimerSettings = ({ onClose }) => {
       setCurrentApiKey("");
       setCurrentModel("gemini-2.0-flash");
       setCurrentPromptTemplate("Simplifica este nombre de tarea manteniendo la esencia pero haciéndolo más conciso. Máximo 50 caracteres. SOLO devuelve el texto simplificado, sin comillas ni explicaciones adicionales. La tarea es: ");
+      resetSongs();
+      setCurrentSongs(useSongLibrary.getState().songs);
     }
   }
 
@@ -194,6 +279,111 @@ export const TimerSettings = ({ onClose }) => {
     successToast("Info now visible", isDark);
   }
 
+  function addStation() {
+    if (!newStationId.trim() || !newStationName.trim()) {
+      failureToast("Ingresa tanto el ID como el nombre de la estación", isDark);
+      return;
+    }
+
+    if (!isValidYoutubeId(newStationId)) {
+      failureToast("ID de YouTube inválido", isDark);
+      return;
+    }
+
+    // Verificar estado de la nueva emisora
+    checkStationStatus(newStationId);
+
+    if (editingIndex !== null) {
+      // Editing existing station
+      const updatedSongs = [...currentSongs];
+      updatedSongs[editingIndex] = {
+        id: newStationId,
+        artist: newStationName,
+        link: `https://www.youtube.com/watch?v=${newStationId}`
+      };
+      setCurrentSongs(updatedSongs);
+      successToast("Estación actualizada", isDark);
+    } else {
+      // Adding new station
+      setCurrentSongs([
+        ...currentSongs,
+        {
+          id: newStationId,
+          artist: newStationName,
+          link: `https://www.youtube.com/watch?v=${newStationId}`
+        }
+      ]);
+      successToast("Estación añadida", isDark);
+    }
+
+    // Reset form
+    setNewStationId("");
+    setNewStationName("");
+    setEditingIndex(null);
+  }
+
+  function editStation(index: number) {
+    const station = currentSongs[index];
+    setNewStationId(station.id);
+    setNewStationName(station.artist);
+    setEditingIndex(index);
+  }
+
+  function deleteStation(index: number) {
+    if (currentSongs.length <= 1) {
+      failureToast("Debes mantener al menos una estación", isDark);
+      return;
+    }
+    
+    const updatedSongs = [...currentSongs];
+    updatedSongs.splice(index, 1);
+    setCurrentSongs(updatedSongs);
+    
+    if (editingIndex === index) {
+      setNewStationId("");
+      setNewStationName("");
+      setEditingIndex(null);
+    }
+  }
+
+  function isValidYoutubeId(id: string) {
+    // Simple validation for YouTube ID
+    return /^[a-zA-Z0-9_-]{11}$/.test(id);
+  }
+
+  function extractYoutubeId(url: string) {
+    if (!url) return "";
+    
+    // Regular expressions for different YouTube URL formats
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    return (match && match[7].length === 11) ? match[7] : "";
+  }
+
+  function handlePasteUrl() {
+    navigator.clipboard.readText().then(text => {
+      const id = extractYoutubeId(text);
+      if (id) {
+        setNewStationId(id);
+        // Try to extract a name from the URL
+        try {
+          const url = new URL(text);
+          const title = url.searchParams.get("title");
+          if (title) {
+            setNewStationName(title);
+          }
+        } catch (e) {
+          // Not a valid URL, ignore
+        }
+      } else {
+        failureToast("URL de YouTube inválida", isDark);
+      }
+    }).catch(err => {
+      failureToast("No se pudo acceder al portapapeles", isDark);
+    });
+  }
+
   // Componente para las pestañas
   const TabButton = ({ id, label, icon, isActive }: {id: TabType, label: string, icon: React.ReactNode, isActive: boolean}) => (
     <button
@@ -214,191 +404,191 @@ export const TimerSettings = ({ onClose }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "time":
-        return (
+  return (
           <div className="p-4">
-            <div className="rounded p-2 text-center">
-              Time <span className="italic">(minutes)</span>
-            </div>
-            <div className="flex items-center justify-between gap-6 text-center">
-              <ToggleOption
-                title="Pomodoro"
-                decrement="session-decrement"
-                increment="session-increment"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  handleLengthChange(e, "session-decrement", "session-increment", 60, 3600, pomoCount, setPomoCount, 60)
-                }
-                onChange={e => {
-                  if (hasStarted) {
-                    e.target.readOnly = true;
-                    return;
-                  }
-                  setPomoCount(e.target.value * 60);
-                }}
-                propertyLength={Math.floor(pomoCount / 60)}
-                hasStarted={hasStarted}
-              />
-              <ToggleOption
-                title="Short Break"
-                decrement="short-break-decrement"
-                increment="short-break-increment"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  handleLengthChange(
-                    e,
-                    "short-break-decrement",
-                    "short-break-increment",
-                    60,
-                    3600,
-                    shortBreak,
-                    setShortBreakState,
-                    60
-                  )
-                }
-                onChange={e => {
-                  if (hasStarted) {
-                    e.target.readOnly = true;
-                    return;
-                  }
-                  setShortBreakState(e.target.value * 60);
-                }}
-                propertyLength={Math.floor(shortBreak / 60)}
-                hasStarted={hasStarted}
-              />
-              <ToggleOption
-                title="Long Break"
-                decrement="long-break-decrement"
-                increment="long-break-increment"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  handleLengthChange(
-                    e,
-                    "long-break-decrement",
-                    "long-break-increment",
-                    60,
-                    3600,
-                    longBreak,
-                    setLongBreakState,
-                    60
-                  )
-                }
-                onChange={e => {
-                  if (hasStarted) {
-                    e.target.readOnly = true;
-                    return;
-                  }
-                  setLongBreakState(e.target.value * 60);
-                }}
-                propertyLength={Math.floor(longBreak / 60)}
-                hasStarted={hasStarted}
-              />
-            </div>
+          <div className="rounded p-2 text-center">
+            Time <span className="italic">(minutes)</span>
           </div>
+          <div className="flex items-center justify-between gap-6 text-center">
+            <ToggleOption
+              title="Pomodoro"
+              decrement="session-decrement"
+              increment="session-increment"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                handleLengthChange(e, "session-decrement", "session-increment", 60, 3600, pomoCount, setPomoCount, 60)
+              }
+              onChange={e => {
+                if (hasStarted) {
+                  e.target.readOnly = true;
+                  return;
+                }
+                setPomoCount(e.target.value * 60);
+              }}
+              propertyLength={Math.floor(pomoCount / 60)}
+              hasStarted={hasStarted}
+            />
+            <ToggleOption
+              title="Short Break"
+              decrement="short-break-decrement"
+              increment="short-break-increment"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                handleLengthChange(
+                  e,
+                  "short-break-decrement",
+                  "short-break-increment",
+                  60,
+                  3600,
+                  shortBreak,
+                  setShortBreakState,
+                  60
+                )
+              }
+              onChange={e => {
+                if (hasStarted) {
+                  e.target.readOnly = true;
+                  return;
+                }
+                setShortBreakState(e.target.value * 60);
+              }}
+              propertyLength={Math.floor(shortBreak / 60)}
+              hasStarted={hasStarted}
+            />
+            <ToggleOption
+              title="Long Break"
+              decrement="long-break-decrement"
+              increment="long-break-increment"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                handleLengthChange(
+                  e,
+                  "long-break-decrement",
+                  "long-break-increment",
+                  60,
+                  3600,
+                  longBreak,
+                  setLongBreakState,
+                  60
+                )
+              }
+              onChange={e => {
+                if (hasStarted) {
+                  e.target.readOnly = true;
+                  return;
+                }
+                setLongBreakState(e.target.value * 60);
+              }}
+              propertyLength={Math.floor(longBreak / 60)}
+              hasStarted={hasStarted}
+            />
+          </div>
+        </div>
         );
       case "alarm":
         return (
           <>
-            <div className="border-gray-100 p-4">
-              <div className="rounded p-2 text-center">Alarm Volume</div>
-              <div className="items-center px-2 pb-2">
-                <Slider
-                  defaultValue={audioVolume}
-                  onChange={value => {
-                    onVolumeChange(value as number);
-                  }}
-                  step={0.1}
-                  min={0}
-                  max={1}
-                />
-              </div>
-            </div>
+        <div className="border-gray-100 p-4">
+          <div className="rounded p-2 text-center">Alarm Volume</div>
+          <div className="items-center px-2 pb-2">
+            <Slider
+              defaultValue={audioVolume}
+              onChange={value => {
+                onVolumeChange(value as number);
+              }}
+              step={0.1}
+              min={0}
+              max={1}
+            />
+          </div>
+        </div>
             <hr className="border-t-1 border-gray-200 dark:border-gray-700" />
-            <div className="border-gray-100 p-4">
-              <div className="rounded p-2 text-center">Alarm Sound</div>
-              <div className="flex items-center justify-between gap-2 pb-2 text-center">
-                <div className="w-1/4">
-                  Retro
-                  <div
-                    className={clsx(
-                      "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
+        <div className="border-gray-100 p-4">
+          <div className="rounded p-2 text-center">Alarm Sound</div>
+          <div className="flex items-center justify-between gap-2 pb-2 text-center">
+            <div className="w-1/4">
+              Retro
+              <div
+                className={clsx(
+                  "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
                       currentAlarm == arcade && "border-2 border-blue-500"
-                    )}
-                    onClick={() => changeAlarm(arcade)}
-                  >
-                    <BsMusicPlayerFill />
-                  </div>
-                </div>
-                <div className="w-1/4">
-                  Bells
-                  <div
-                    className={clsx(
-                      "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
-                      currentAlarm == bells && "border-2 border-blue-500"
-                    )}
-                    onClick={() => changeAlarm(bells)}
-                  >
-                    <BsBellFill />
-                  </div>
-                </div>
-                <div className="w-1/4">
-                  Flute
-                  <div
-                    className={clsx(
-                      "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
-                      currentAlarm == flute && "border-2 border-blue-500"
-                    )}
-                    onClick={() => changeAlarm(flute)}
-                  >
-                    <GiPanFlute />
-                  </div>
-                </div>
-                <div className="w-1/4">
-                  Piano
-                  <div
-                    className={clsx(
-                      "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
-                      currentAlarm == piano && "border-2 border-blue-500"
-                    )}
-                    onClick={() => changeAlarm(piano)}
-                  >
-                    <CgPiano />
-                  </div>
-                </div>
+                )}
+                onClick={() => changeAlarm(arcade)}
+              >
+                <BsMusicPlayerFill />
               </div>
             </div>
+            <div className="w-1/4">
+              Bells
+              <div
+                className={clsx(
+                  "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
+                      currentAlarm == bells && "border-2 border-blue-500"
+                )}
+                onClick={() => changeAlarm(bells)}
+              >
+                <BsBellFill />
+              </div>
+            </div>
+            <div className="w-1/4">
+              Flute
+              <div
+                className={clsx(
+                  "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
+                      currentAlarm == flute && "border-2 border-blue-500"
+                )}
+                onClick={() => changeAlarm(flute)}
+              >
+                <GiPanFlute />
+              </div>
+            </div>
+            <div className="w-1/4">
+              Piano
+              <div
+                className={clsx(
+                  "flex cursor-pointer items-center justify-center bg-gray-200 p-2 text-center dark:bg-gray-700 dark:text-gray-200",
+                      currentAlarm == piano && "border-2 border-blue-500"
+                )}
+                onClick={() => changeAlarm(piano)}
+              >
+                <CgPiano />
+              </div>
+            </div>
+          </div>
+        </div>
           </>
         );
       case "layout":
         return (
           <>
-            <div className="border-gray-100 p-4">
-              <div className="rounded p-2 text-center">Grid Size (increasing Step Size)</div>
-              <div className="items-center px-2 pb-2">
-                <Slider
-                  //@ts-ignore
-                  defaultValue={onDefaultChange}
-                  onChange={value => {
-                    onGridChange(value as number);
-                  }}
-                  step={50}
-                  min={0}
-                  max={150}
-                />
-              </div>
-            </div>
+        <div className="border-gray-100 p-4">
+          <div className="rounded p-2 text-center">Grid Size (increasing Step Size)</div>
+          <div className="items-center px-2 pb-2">
+            <Slider
+              //@ts-ignore
+              defaultValue={onDefaultChange}
+              onChange={value => {
+                onGridChange(value as number);
+              }}
+              step={50}
+              min={0}
+              max={150}
+            />
+          </div>
+        </div>
             <hr className="border-t-1 border-gray-200 dark:border-gray-700" />
-            <div className="border-gray-100 p-4">
-              <div className="rounded pb-2 text-center">Lock Widgets In-place</div>
-              <div className="flex justify-center">
-                <Button
-                  className={clsx(
-                    "float-right w-[70%] font-normal text-gray-800 hover:text-white dark:text-white ",
-                    currentWidgetLockState && " bg-red-500 hover:bg-red-700"
-                  )}
-                  variant="primary"
-                  onClick={() => setCurrentWidgetLockState(!currentWidgetLockState)}
-                >
-                  {currentWidgetLockState ? "Unlock" : "Lock"} Widgets
-                </Button>
-              </div>
-            </div>
+        <div className="border-gray-100 p-4">
+          <div className="rounded pb-2 text-center">Lock Widgets In-place</div>
+          <div className="flex justify-center">
+            <Button
+              className={clsx(
+                "float-right w-[70%] font-normal text-gray-800 hover:text-white dark:text-white ",
+                currentWidgetLockState && " bg-red-500 hover:bg-red-700"
+              )}
+              variant="primary"
+              onClick={() => setCurrentWidgetLockState(!currentWidgetLockState)}
+            >
+              {currentWidgetLockState ? "Unlock" : "Lock"} Widgets
+            </Button>
+          </div>
+        </div>
           </>
         );
       case "ai":
@@ -461,6 +651,165 @@ export const TimerSettings = ({ onClose }) => {
             </div>
           </div>
         );
+      case "music":
+        return (
+          <div className="border-gray-100 p-4">
+            <div className="rounded p-2 text-center">Configuración de Emisoras de Música</div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">API Key de YouTube (Opcional)</label>
+                <input
+                  type="password"
+                  className="w-full px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
+                  value={youtubeApiKey}
+                  onChange={(e) => setYoutubeApiKey(e.target.value)}
+                  placeholder="Ingresa tu API Key de YouTube"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  La API Key te permitirá verificar con más precisión si las emisoras están en línea. Obtén una en <a href="https://console.developers.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500">Google Cloud Console</a>
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <h3 className="text-sm font-medium mb-2">Emisoras configuradas</h3>
+                {currentSongs.length > 0 ? (
+                  <div className="max-h-40 overflow-y-auto border dark:border-gray-700 rounded-md">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID YouTube</th>
+                          <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+                        {currentSongs.map((station, index) => (
+                          <tr key={station.id} className={`${editingIndex === index ? 'bg-blue-50 dark:bg-blue-900' : ''}`}>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-center">
+                              {checkingStatus === station.id ? (
+                                <div className="w-3 h-3 mx-auto bg-yellow-400 rounded-full animate-pulse"></div>
+                              ) : (
+                                <div 
+                                  className={`w-3 h-3 mx-auto ${stationStatuses[station.id]?.isOnline ? 'bg-green-500' : 'bg-red-500'} rounded-full`}
+                                  title={stationStatuses[station.id]?.details}
+                                  onClick={() => checkStationStatus(station.id)}
+                                ></div>
+                              )}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">{station.artist}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{station.id}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-right text-sm">
+                              <button
+                                onClick={() => openYoutubeUrl(station.id)}
+                                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 mr-2"
+                                title="Abrir en YouTube"
+                              >
+                                Ver
+                              </button>
+                              <button
+                                onClick={() => editStation(index)}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-2"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => deleteStation(index)}
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                              >
+                                Eliminar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center p-4 text-gray-500 dark:text-gray-400">
+                    No hay emisoras configuradas
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t dark:border-gray-700 pt-4">
+                <h3 className="text-sm font-medium mb-2">
+                  {editingIndex !== null ? 'Editar emisora' : 'Añadir nueva emisora'}
+                </h3>
+                <div className="flex flex-col space-y-2">
+                  <div>
+                    <label className="block text-sm mb-1">ID de YouTube</label>
+                    <div className="flex">
+                      <input
+                        type="text"
+                        value={newStationId}
+                        onChange={(e) => setNewStationId(e.target.value)}
+                        placeholder="ej: jfKfPfyJRdk"
+                        className="flex-1 px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
+                      />
+                      <button
+                        onClick={handlePasteUrl}
+                        className="ml-2 px-3 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm"
+                        title="Pegar URL de YouTube"
+                      >
+                        Pegar URL
+                      </button>
+                      {newStationId && (
+                        <button
+                          onClick={() => checkStationStatus(newStationId)}
+                          className="ml-2 px-3 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm flex items-center"
+                          title="Verificar estado"
+                        >
+                          {checkingStatus === newStationId ? (
+                            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse mr-1"></div>
+                          ) : (
+                            <div className={`w-3 h-3 ${stationStatuses[newStationId]?.isOnline ? 'bg-green-500' : 'bg-red-500'} rounded-full mr-1`}></div>
+                          )}
+                          Verificar
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      ID de 11 caracteres del video de YouTube (ej: 11 caracteres finales de https://www.youtube.com/watch?v=jfKfPfyJRdk)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm mb-1">Nombre de la emisora</label>
+                    <input
+                      type="text"
+                      value={newStationName}
+                      onChange={(e) => setNewStationName(e.target.value)}
+                      placeholder="ej: Lofi Girl"
+                      className="w-full px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end pt-2">
+                    {editingIndex !== null && (
+                      <button
+                        onClick={() => {
+                          setNewStationId("");
+                          setNewStationName("");
+                          setEditingIndex(null);
+                        }}
+                        className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm mr-2"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button
+                      onClick={addStation}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                    >
+                      {editingIndex !== null ? 'Actualizar' : 'Añadir'} emisora
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -477,7 +826,7 @@ export const TimerSettings = ({ onClose }) => {
       </div>
       
       {/* Pestañas */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <TabButton 
           id="time" 
           label="Tiempo" 
@@ -502,6 +851,12 @@ export const TimerSettings = ({ onClose }) => {
           icon={<BiBot />} 
           isActive={activeTab === "ai"} 
         />
+        <TabButton 
+          id="music" 
+          label="Música" 
+          icon={<BiMusic />} 
+          isActive={activeTab === "music"} 
+        />
       </div>
       
       {/* Contenido de la pestaña activa */}
@@ -511,29 +866,29 @@ export const TimerSettings = ({ onClose }) => {
       
       {/* Botones de acción */}
       <div className="flex justify-between p-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          className="font-normal text-gray-800 hover:text-white dark:text-white"
-          variant="cold"
-          onClick={handleDefaults}
-        >
-          Default
-        </Button>
+          <Button
+            className="font-normal text-gray-800 hover:text-white dark:text-white"
+            variant="cold"
+            onClick={handleDefaults}
+          >
+            Default
+          </Button>
 
-        <Button
-          className="font-normal text-gray-800 hover:text-white dark:text-white"
-          variant="cold"
-          onClick={unHideInfo}
-        >
-          Unhide Info
-        </Button>
+          <Button
+            className="font-normal text-gray-800 hover:text-white dark:text-white"
+            variant="cold"
+            onClick={unHideInfo}
+          >
+            Unhide Info
+          </Button>
 
-        <Button
-          className="font-normal text-gray-800 hover:text-white dark:text-white"
-          variant="cold"
-          onClick={onSubmit}
-        >
+          <Button
+            className="font-normal text-gray-800 hover:text-white dark:text-white"
+            variant="cold"
+            onClick={onSubmit}
+          >
           Guardar
-        </Button>
+          </Button>
       </div>
     </div>
   );

@@ -485,7 +485,7 @@ export const useTask = create<ITaskState>(
  * Handles the song played in the player
  */
 
-const songs = [
+const defaultSongs = [
   {
     id: "e3L1PIY1pN8",
     artist: "The Coffee Shop Radio",
@@ -508,9 +508,27 @@ const songs = [
   },
 ];
 
+export const useSongLibrary = create<{
+  songs: ISongTask[];
+  setSongs: (songs: ISongTask[]) => void;
+  resetSongs: () => void;
+}>(
+  persist(
+    (set) => ({
+      songs: defaultSongs,
+      setSongs: (songs) => set({ songs }),
+      resetSongs: () => set({ songs: defaultSongs }),
+    }),
+    { name: "song_library" }
+  )
+);
+
 export const useSong = create<ISongState>(set => ({
-  song: songs[0],
-  setSong: songId => set({ song: songs.find(s => s.id === songId) as ISongTask }),
+  song: defaultSongs[0],
+  setSong: songId => {
+    const songLibrary = useSongLibrary.getState().songs;
+    set({ song: songLibrary.find(s => s.id === songId) as ISongTask })
+  },
   toggledSong: "",
   setToggledSong: toggledSong => set({ toggledSong }),
 }));
