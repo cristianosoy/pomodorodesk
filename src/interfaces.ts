@@ -148,6 +148,10 @@ export interface ISongTask {
   artist: string;
   link: string;
   image?: string;
+  imagePosition?: {
+    x?: number; // posición horizontal (0 = izquierda, 50 = centro, 100 = derecha)
+    y?: number; // posición vertical (0 = arriba, 50 = centro, 100 = abajo)
+  };
 }
 
 export interface ISongState {

@@ -497,13 +497,15 @@ const defaultSongs = [
     id: "e3L1PIY1pN8",
     artist: "The Coffee Shop Radio",
     link: "https://www.youtube.com/watch?v=e3L1PIY1pN8",
-    image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1000&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1000&auto=format&fit=crop",
+    imagePosition: { x: 50, y: 30 }
   },
   {
     id: "jfKfPfyJRdk",
     artist: "Lofi Girl",
     link: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
-    image: "https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?q=80&w=1000&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?q=80&w=1000&auto=format&fit=crop",
+    imagePosition: { x: 40, y: 60 }
   },
   {
     id: "hi1cYzaLEig",

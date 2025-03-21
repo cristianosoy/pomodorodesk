@@ -71,6 +71,8 @@ export const TimerSettings = ({ onClose }) => {
   const [newStationId, setNewStationId] = useState("");
   const [newStationName, setNewStationName] = useState("");
   const [newStationImage, setNewStationImage] = useState("");
+  const [newImagePositionX, setNewImagePositionX] = useState(50);
+  const [newImagePositionY, setNewImagePositionY] = useState(50);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [stationStatuses, setStationStatuses] = useState<Record<string, { isOnline: boolean, details?: string}>>({});
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
@@ -294,6 +296,12 @@ export const TimerSettings = ({ onClose }) => {
     // Verificar estado de la nueva emisora
     checkStationStatus(newStationId);
 
+    // Preparar la configuración de posición de imagen si hay imagen personalizada
+    const imagePositionConfig = newStationImage ? {
+      x: newImagePositionX,
+      y: newImagePositionY
+    } : undefined;
+
     if (editingIndex !== null) {
       // Editing existing station
       const updatedSongs = [...currentSongs];
@@ -301,7 +309,8 @@ export const TimerSettings = ({ onClose }) => {
         id: newStationId,
         artist: newStationName,
         link: `https://www.youtube.com/watch?v=${newStationId}`,
-        image: newStationImage || undefined
+        image: newStationImage || undefined,
+        imagePosition: imagePositionConfig
       };
       setCurrentSongs(updatedSongs);
       successToast("Estación actualizada", isDark);
@@ -313,7 +322,8 @@ export const TimerSettings = ({ onClose }) => {
           id: newStationId,
           artist: newStationName,
           link: `https://www.youtube.com/watch?v=${newStationId}`,
-          image: newStationImage || undefined
+          image: newStationImage || undefined,
+          imagePosition: imagePositionConfig
         }
       ]);
       successToast("Estación añadida", isDark);
@@ -323,6 +333,8 @@ export const TimerSettings = ({ onClose }) => {
     setNewStationId("");
     setNewStationName("");
     setNewStationImage("");
+    setNewImagePositionX(50);
+    setNewImagePositionY(50);
     setEditingIndex(null);
   }
 
@@ -331,6 +343,8 @@ export const TimerSettings = ({ onClose }) => {
     setNewStationId(station.id);
     setNewStationName(station.artist);
     setNewStationImage(station.image || "");
+    setNewImagePositionX(station.imagePosition?.x !== undefined ? station.imagePosition.x : 50);
+    setNewImagePositionY(station.imagePosition?.y !== undefined ? station.imagePosition.y : 50);
     setEditingIndex(index);
   }
 
@@ -819,6 +833,85 @@ export const TimerSettings = ({ onClose }) => {
                     </p>
                   </div>
                   
+                  {newStationImage && (
+                    <div className="mt-3">
+                      <label className="block text-sm mb-1 flex items-center justify-between">
+                        <span>Posición de la imagen</span>
+                        <span className="text-xs text-blue-500 dark:text-blue-400 flex items-center gap-1">
+                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                          Punto de enfoque
+                        </span>
+                      </label>
+                      
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <div className="mb-3">
+                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              <span>Horizontal: {newImagePositionX}%</span>
+                              <span>{newImagePositionX === 0 ? 'Izq' : newImagePositionX === 50 ? 'Centro' : newImagePositionX === 100 ? 'Der' : ''}</span>
+                            </div>
+                            <Slider
+                              value={newImagePositionX}
+                              onChange={value => setNewImagePositionX(value as number)}
+                              min={0}
+                              max={100}
+                              step={1}
+                            />
+                          </div>
+                          
+                          <div>
+                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              <span>Vertical: {newImagePositionY}%</span>
+                              <span>{newImagePositionY === 0 ? 'Arriba' : newImagePositionY === 50 ? 'Centro' : newImagePositionY === 100 ? 'Abajo' : ''}</span>
+                            </div>
+                            <Slider
+                              value={newImagePositionY}
+                              onChange={value => setNewImagePositionY(value as number)}
+                              min={0}
+                              max={100}
+                              step={1}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="w-32 h-32 border p-1 rounded-md relative bg-gray-300 dark:bg-gray-600 overflow-hidden">
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
+                            {newStationImage ? 'Vista previa' : 'Sin imagen'}
+                          </div>
+                          {newStationImage && (
+                            <>
+                              <img 
+                                src={newStationImage} 
+                                alt="Vista previa" 
+                                className="absolute w-full h-full object-cover"
+                                style={{
+                                  objectPosition: `${newImagePositionX}% ${newImagePositionY}%`
+                                }}
+                                onError={() => {
+                                  failureToast("No se pudo cargar la imagen", isDark);
+                                }}
+                              />
+                              {/* Indicador de área visible */}
+                              <div className="absolute inset-0 border-2 border-blue-500 border-dashed pointer-events-none z-10"></div>
+                              {/* Indicador de punto focal */}
+                              <div 
+                                className="absolute w-4 h-4 rounded-full border-2 border-red-500 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20"
+                                style={{
+                                  left: `${newImagePositionX}%`,
+                                  top: `${newImagePositionY}%`
+                                }}
+                              >
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-end pt-2">
                     {editingIndex !== null && (
                       <button
@@ -826,6 +919,8 @@ export const TimerSettings = ({ onClose }) => {
                           setNewStationId("");
                           setNewStationName("");
                           setNewStationImage("");
+                          setNewImagePositionX(50);
+                          setNewImagePositionY(50);
                           setEditingIndex(null);
                         }}
                         className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded-md text-sm mr-2"

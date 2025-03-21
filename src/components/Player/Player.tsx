@@ -64,7 +64,7 @@ export const Player = () => {
   const [songDetails, setSongDetails] = useState<{title?: string, duration?: string}>({});
   const [previousImage, setPreviousImage] = useState<string>('');
   const [isImageTransitioning, setIsImageTransitioning] = useState(false);
-  
+
   useEffect(() => {
     if (toggledSong) {
       setIsPlaying(true);
@@ -294,6 +294,22 @@ export const Player = () => {
     // Verificar el estado de la emisora
     await checkStationStatus(song.id);
     
+    // Forzar la actualización de la imagen de fondo
+    const newImage = hasCustomImage 
+      ? currentSong?.image 
+      : getYouTubeThumbnail(song.id, 'high');
+    
+    if (newImage && newImage !== currentImage) {
+      // Forzar el efecto de transición
+      setPreviousImage(currentImage);
+      setIsImageTransitioning(true);
+      
+      // Resetear la transición después de la duración de la animación
+      setTimeout(() => {
+        setIsImageTransitioning(false);
+      }, 500);
+    }
+    
     // Reanudar la reproducción si estaba reproduciendo
     if (isPlaying) {
       setTimeout(() => {
@@ -333,7 +349,7 @@ export const Player = () => {
               >
                 <IconContext.Provider value={{ size: "1.2rem" }}>
                   <IoCloseSharp />
-                </IconContext.Provider>
+            </IconContext.Provider>
               </button>
             </div>
             
@@ -400,43 +416,64 @@ export const Player = () => {
           {/* Imagen anterior para el crossfade */}
           {isImageTransitioning && previousImage && (
             <div className="absolute inset-0 animate-[fadeOut_500ms_ease-out]">
-              <img 
-                src={previousImage} 
-                alt="Previous background"
-                className="absolute w-full h-full object-cover object-center scale-150" 
-                style={{
-                  top: '-25%',
-                  left: '-25%',
-                  width: '150%',
-                  height: '150%'
-                }}
-              />
+              {hasCustomImage ? (
+                <img 
+                  src={previousImage} 
+                  alt="Previous background"
+                  className="absolute w-full h-full object-cover" 
+                  style={{
+                    objectPosition: currentSong?.imagePosition ? 
+                      `${currentSong.imagePosition.x !== undefined ? currentSong.imagePosition.x : 50}% ${currentSong.imagePosition.y !== undefined ? currentSong.imagePosition.y : 50}%` 
+                      : '50% 50%'
+                  }}
+                />
+              ) : (
+                <div className="absolute -inset-[2rem] scale-110">
+                  <img 
+                    src={previousImage} 
+                    alt="Previous background"
+                    className="absolute w-full h-full object-cover opacity-30 blur-md"
+                    style={{ transform: 'scale(1.2)' }}
+                  />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1a1a1a]/70 to-[#1a1a1a]"></div>
             </div>
           )}
           
           {/* Imagen actual */}
           <div className={`absolute inset-0 ${isImageTransitioning ? 'animate-[fadeIn_500ms_ease-out]' : ''}`}>
-            <img 
-              key={currentImage}
-              src={currentImage} 
-              alt={currentTitle} 
-              className="absolute w-full h-full object-cover object-center scale-150" 
-              style={{
-                top: '-25%',
-                left: '-25%',
-                width: '150%',
-                height: '150%'
-              }}
-              onError={() => {
-                console.error("Error cargando imagen:", currentImage);
-                // Si falla la carga y es una imagen personalizada, intentar con la miniatura
-                if (hasCustomImage && song?.id) {
-                  const fallbackImage = getYouTubeThumbnail(song.id, 'high');
-                  console.log("Usando imagen de respaldo:", fallbackImage);
-                }
-              }}
-            />
+            {hasCustomImage ? (
+              <img 
+                key={currentImage}
+                src={currentImage} 
+                alt={currentTitle} 
+                className="absolute w-full h-full object-cover" 
+                style={{
+                  objectPosition: currentSong?.imagePosition ? 
+                    `${currentSong.imagePosition.x !== undefined ? currentSong.imagePosition.x : 50}% ${currentSong.imagePosition.y !== undefined ? currentSong.imagePosition.y : 50}%` 
+                    : '50% 50%'
+                }}
+                onError={() => {
+                  console.error("Error cargando imagen:", currentImage);
+                  // Si falla la carga y es una imagen personalizada, intentar con la miniatura
+                  if (hasCustomImage && song?.id) {
+                    const fallbackImage = getYouTubeThumbnail(song.id, 'high');
+                    console.log("Usando imagen de respaldo:", fallbackImage);
+                  }
+                }}
+              />
+            ) : (
+              <div className="absolute -inset-[2rem] scale-110">
+                <img 
+                  key={currentImage}
+                  src={currentImage} 
+                  alt={currentTitle} 
+                  className="absolute w-full h-full object-cover opacity-30 blur-md"
+                  style={{ transform: 'scale(1.2)' }}
+                />
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1a1a1a]/70 to-[#1a1a1a]"></div>
           </div>
         </div>
@@ -454,7 +491,10 @@ export const Player = () => {
 
         {/* Contenido central */}
         <div className="relative flex flex-col items-center justify-center p-8 z-10 min-h-[300px]">
-          <h2 className="text-2xl font-bold text-center mb-2 transition-all duration-300">{currentTitle}</h2>
+          {/* Mostrar el título solo si la estación está disponible */}
+          {(!stationStatus || stationStatus.isOnline) && (
+            <h2 className="text-2xl font-bold text-center mb-2 transition-all duration-300">{currentTitle}</h2>
+          )}
           <p className="text-sm text-gray-300 text-center mb-3 transition-all duration-300">{currentSong?.artist}</p>
           
           {/* Indicador de estado */}
@@ -499,8 +539,8 @@ export const Player = () => {
                   backgroundColor: "rgba(255, 255, 255, 0.2)",
                   height: 4,
                   borderRadius: 2
-                }}
-                trackStyle={{
+              }}
+              trackStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.8)",
                   height: 4,
                   borderRadius: 2
