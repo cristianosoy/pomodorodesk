@@ -4,7 +4,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Strike from '@tiptap/extension-strike';
-import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl } from 'react-icons/bs';
+import Link from '@tiptap/extension-link';
+import { BsTypeBold, BsTypeItalic, BsTypeUnderline, BsListUl, BsListOl, BsLink45Deg } from 'react-icons/bs';
 import { HiMiniPencilSquare } from 'react-icons/hi2';
 import { BiUndo, BiRedo } from 'react-icons/bi';
 import { TbClearFormatting } from 'react-icons/tb';
@@ -48,6 +49,16 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
       Underline,
       Strike,
       Highlight.configure({ multicolor: false }),
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: 'note-link',
+          target: '_blank', // Abrir enlaces en nueva pestaña
+          rel: 'noopener noreferrer', // Seguridad para enlaces externos
+        },
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -73,6 +84,37 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
     } else {
       editor.chain().focus().toggleBulletList().run();
     }
+  };
+
+  // Función para añadir un enlace
+  const setLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+
+    // Cancelar operación si se cerró el prompt
+    if (url === null) {
+      return;
+    }
+
+    // Si el campo está vacío, eliminar el enlace
+    if (url === '') {
+      editor.chain().focus().unsetMark('link').run();
+      return;
+    }
+
+    // Validar que sea una URL válida
+    let finalUrl = url;
+    if (!/^https?:\/\//i.test(url)) {
+      finalUrl = `https://${url}`;
+    }
+
+    // Establecer el enlace
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .setMark('link', { href: finalUrl, target: '_blank' })
+      .run();
   };
 
   return (
@@ -136,6 +178,14 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
             title="Highlight"
           >
             <HiMiniPencilSquare size={16} />
+          </button>
+          <button
+            onClick={setLink}
+            className={editor.isActive('link') ? 'is-active' : ''}
+            type="button"
+            title="Add or Edit Link"
+          >
+            <BsLink45Deg size={16} />
           </button>
           <button
             onClick={() => editor.chain().focus().unsetAllMarks().run()}
