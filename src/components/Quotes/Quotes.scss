@@ -1,0 +1,99 @@
+.quote-widget {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .quote-navigation-container {
+    .navigation-arrow {
+      opacity: 0.5;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        opacity: 1;
+        transform: scale(1.15);
+      }
+      
+      &.left-arrow:hover {
+        transform: scale(1.15) translateX(-2px);
+      }
+      
+      &.right-arrow:hover {
+        transform: scale(1.15) translateX(2px);
+      }
+    }
+  }
+  
+  .quote-text {
+    position: relative;
+    
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      opacity: 0.2;
+    }
+    
+    &::before {
+      top: 0;
+      left: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z'/%3E%3C/svg%3E");
+    }
+    
+    &::after {
+      bottom: 0;
+      right: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.571 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z'/%3E%3C/svg%3E");
+    }
+  }
+  
+  .quote-reference {
+    position: relative;
+  }
+  
+  .reload-button, .copy-button, .pin-button {
+    transition: transform 0.2s ease;
+    font-size: 1rem;
+    
+    &:hover {
+      transform: scale(1.15);
+    }
+  }
+  
+  .reload-button {
+    &:hover {
+      transform: rotate(45deg);
+    }
+  }
+  
+  .tooltip-text {
+    opacity: 0;
+    animation: fadeInOut 2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -4px;
+      border-width: 4px;
+      border-style: solid;
+      border-color: #4b5563 transparent transparent transparent;
+    }
+  }
+  
+  @keyframes fadeInOut {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+} 
