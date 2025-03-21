@@ -1,10 +1,10 @@
-import { useRef, useEffect, useState, RefCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa";
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoCloseSharp } from "react-icons/io5";
 import { Settings } from "./Settings";
-import { useTask, useTimer, useBreakStarted } from "@Store";
+import { useTask, useTimer, useBreakStarted, useHasStarted } from "@Store";
 import clsx from "clsx";
 import { ITask } from "@Root/src/interfaces";
 import { DeleteTaskModal } from "./DeleteTaskModal";
@@ -24,27 +24,103 @@ const ProgressDot = ({ filled, alerted }) => (
   />
 );
 
-const formatTimeSpent = (minutes: number): string => {
-  if (minutes < 60) {
-    return `${minutes}m`;
+const formatTimeSpent = (seconds: number): string => {
+  if (!seconds && seconds !== 0) return "0s";
+  
+  if (seconds < 60) {
+    return `${seconds}s`;
   }
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+  }
+  const hours = Math.floor(seconds / 3600);
+  const remainingMinutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  let result = `${hours}h`;
+  if (remainingMinutes > 0) result += ` ${remainingMinutes}m`;
+  if (remainingSeconds > 0) result += ` ${remainingSeconds}s`;
+  return result;
 };
 
 export const Task = ({ task, tasks }) => {
   const [openSettings, setOpenSettings] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [displayTime, setDisplayTime] = useState(task.timeSpentSeconds || 0);
+  
   const { removeTask, setCompleted, toggleInProgressState, alertTask, setPomodoroCounter, toggleMenu } = useTask();
   const { breakStarted } = useBreakStarted();
+  const { isRunning } = useTimer();
   const { timerQueue } = useTimer();
+  
   const innerRef = onClickOff(() => {
     toggleMenu(task.id, false);
   });
 
-  // Calcular tiempo total (asumiendo 25 minutos por pomodoro)
-  const timeSpentInMinutes = task.pomodoroCounter * 25;
+  // Efecto para actualizar la visualización del tiempo
+  useEffect(() => {
+    // Solo mostrar el tiempo actual almacenado en la tarea
+    setDisplayTime(task.timeSpentSeconds || 0);
+    
+    // No hacer nada más si la tarea no está en progreso o el timer no está corriendo
+    if (!task.inProgress || !isRunning || breakStarted) {
+      return;
+    }
+    
+    console.log(`Task ${task.id} (${task.description}) timer started - inProgress: ${task.inProgress}, isRunning: ${isRunning}`);
+    
+    // Configurar un intervalo para actualizar el tiempo mostrado
+    const intervalId = setInterval(() => {
+      // Solo incrementar el tiempo si la tarea está en progreso y el timer está corriendo
+      if (task.inProgress && isRunning && !breakStarted) {
+        setDisplayTime(prev => prev + 1);
+        console.log(`Task ${task.id} time updated: ${displayTime + 1}s`);
+      }
+    }, 1000);
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.log(`Task ${task.id} timer stopped`);
+      }
+    };
+  }, [task.inProgress, isRunning, breakStarted, task.id, task.timeSpentSeconds]);
+  
+  // Efecto para guardar el tiempo transcurrido cuando se detiene el temporizador o cambia el estado de la tarea
+  useEffect(() => {
+    // Solo guardar el tiempo cuando:
+    // 1. El timer estaba corriendo y ahora se detuvo mientras la tarea está en progreso
+    // 2. O cuando la tarea deja de estar en progreso
+    if ((task.inProgress && !isRunning) || (!task.inProgress && displayTime > 0)) {
+      console.log(`Task ${task.id} saving time: ${displayTime}s`);
+      
+      // Actualizar el tiempo en el store
+      // Primero desactivamos para guardar el tiempo
+      if (task.inProgress) {
+        toggleInProgressState(task.id, false);
+      }
+      
+      // Si la tarea debe seguir en progreso, la reactivamos
+      if (task.inProgress) {
+        toggleInProgressState(task.id, true);
+      }
+    }
+  }, [isRunning, task.inProgress]);
+  
+  // Manejar la finalización de un pomodoro
+  useEffect(() => {
+    if (timerQueue === 0 && task.inProgress && !breakStarted) {
+      console.log(`Task ${task.id} pomodoro completed`);
+      setPomodoroCounter(task.id);
+      
+      // Si se completaron todos los pomodoros, marcar como completada
+      if (task.pomodoroCounter + 1 >= task.pomodoro) {
+        toggleInProgressState(task.id, false);
+        setCompleted(task.id, true);
+      }
+    }
+  }, [timerQueue, breakStarted]);
 
   const openContextMenu = event => {
     event.preventDefault();
@@ -69,6 +145,7 @@ export const Task = ({ task, tasks }) => {
     if (task.completed) {
       return;
     }
+    console.log("Toggling task:", task.id, "Current state:", task.inProgress, "-> New state:", !task.inProgress);
     toggleInProgressState(task.id, !task.inProgress);
   };
 
@@ -78,14 +155,9 @@ export const Task = ({ task, tasks }) => {
     if (task.completed) setCompleted(task.id, false);
   };
 
+  // Manejar la alerta cuando se completan todos los pomodoros
   useEffect(() => {
-    if (timerQueue === 0 && !task.alerted && task.inProgress) {
-      setPomodoroCounter(task.id);
-    }
-  }, [timerQueue, breakStarted]);
-
-  useEffect(() => {
-    if (task.pomodoroCounter == task.pomodoro && !task.alerted) {
+    if (task.pomodoroCounter === task.pomodoro && !task.alerted) {
       alertTask(task.id, true);
     }
   }, [task.pomodoroCounter]);
@@ -116,7 +188,7 @@ export const Task = ({ task, tasks }) => {
               <div className="flex flex-col items-end gap-1.5">
                 {/* Tiempo total invertido */}
                 <span className="text-xs font-light opacity-80">
-                  {formatTimeSpent(timeSpentInMinutes)}
+                  {formatTimeSpent(displayTime)}
                 </span>
                 
                 {/* Puntos de progreso */}

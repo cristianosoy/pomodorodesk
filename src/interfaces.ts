@@ -10,7 +10,11 @@ export interface IAlarmOption {
 
 export interface ITimer {
   timerQueue: number;
-  setTimerQueue: (newTime: number) => void;
+  timer: number;
+  isRunning: boolean;
+  setTimerQueue: (value: number) => void;
+  setTimer: (value: number) => void;
+  setIsRunning: (value: boolean) => void;
 }
 
 export interface IPomodoroCounter {
@@ -99,6 +103,8 @@ export interface ITask {
   pomodoroCounter: number;
   alerted: boolean;
   menuToggled: boolean;
+  timeSpentSeconds: number;
+  startTime?: number;
 }
 
 export interface ITaskState {
@@ -114,6 +120,7 @@ export interface ITaskState {
   setPomodoro: (id: number, newVal: number) => void;
   toggleMenu: (id: number, flag: boolean) => void;
   reorderTasks: (tasks: ITask[]) => void;
+  updateTaskTime: () => void;
 }
 
 export interface IKanbanBoard {

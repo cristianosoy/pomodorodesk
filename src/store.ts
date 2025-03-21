@@ -117,7 +117,11 @@ export const useAlarmOption = create<IAlarmOption>(
 
 export const useTimer = create<ITimer>(set => ({
   timerQueue: 60,
+  timer: 60,
+  isRunning: false,
   setTimerQueue: newTime => set({ timerQueue: newTime }),
+  setTimer: newTime => set({ timer: newTime }),
+  setIsRunning: isRunning => set({ isRunning }),
 }));
 
 /**
@@ -302,26 +306,7 @@ export const useStickyNote = create<IStickyNoteState>(
 export const useTask = create<ITaskState>(
   persist(
     (set, _) => ({
-      tasks: [
-        {
-          id: Date.now(),
-          description: "Task in progress",
-          inProgress: true,
-          completed: false,
-          pomodoro: 1,
-          pomodoroCounter: 0,
-          alerted: false,
-        } as ITask,
-        {
-          id: Date.now() + 1,
-          description: "Task not in progress",
-          inProgress: false,
-          completed: false,
-          pomodoro: 1,
-          pomodoroCounter: 0,
-          alerted: false,
-        } as ITask,
-      ],
+      tasks: [],
       addTask: (description: string, count: number, isBreak: boolean) => {
         set(state => ({
           tasks: [
@@ -334,6 +319,8 @@ export const useTask = create<ITaskState>(
               pomodoroCounter: isBreak ? -1 : 0,
               alerted: false,
               menuToggled: false,
+              timeSpentSeconds: 0,
+              startTime: null,
             } as ITask,
             ...state.tasks,
           ],
@@ -358,8 +345,50 @@ export const useTask = create<ITaskState>(
       },
       removeAllTasks: () => set({ tasks: [] }),
       toggleInProgressState: (id, flag) => {
+        console.log(`toggleInProgressState: id=${id}, flag=${flag}`);
         set(state => ({
-          tasks: state.tasks.map(task => (task.id === id ? ({ ...task, inProgress: flag } as ITask) : task)),
+          tasks: state.tasks.map(task => {
+            if (task.id === id) {
+              if (flag) {
+                // Si estamos activando la tarea, necesitamos un startTime
+                return {
+                  ...task,
+                  inProgress: flag,
+                  startTime: Date.now(),
+                } as ITask;
+              } else {
+                // Si estamos desactivando la tarea, calculamos el tiempo transcurrido
+                const elapsedSeconds = task.startTime 
+                  ? Math.floor((Date.now() - task.startTime) / 1000) 
+                  : 0;
+                
+                console.log(`Task ${id}: Adding ${elapsedSeconds}s to ${task.timeSpentSeconds || 0}s`);
+                
+                return {
+                  ...task,
+                  inProgress: flag,
+                  timeSpentSeconds: (task.timeSpentSeconds || 0) + elapsedSeconds,
+                  startTime: null,
+                } as ITask;
+              }
+            }
+            return task;
+          }),
+        }));
+      },
+      updateTaskTime: () => {
+        set(state => ({
+          tasks: state.tasks.map(task => {
+            if (task.inProgress && task.startTime) {
+              const elapsedTime = Math.floor((Date.now() - task.startTime) / 1000);
+              return {
+                ...task,
+                timeSpentSeconds: task.timeSpentSeconds + elapsedTime,
+                startTime: Date.now(),
+              } as ITask;
+            }
+            return task;
+          }),
         }));
       },
       setCompleted: (id, flag) => {

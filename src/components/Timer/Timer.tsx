@@ -11,6 +11,7 @@ import {
   useBreakStarted,
   useAudioVolume,
   useAlarmOption,
+  useTask,
 } from "@Store";
 import toast from "react-hot-toast";
 import { secondsToTime, formatDisplayTime } from "@Utils/utils";
@@ -25,13 +26,14 @@ export const Timer = () => {
   const { breakStarted, setBreakStarted } = useBreakStarted();
   const [breakLength, setBreakLength] = useState(shortBreakLength);
   const [timer, setTimer] = useState(60);
-  const { setTimerQueue } = useTimer();
+  const { setTimerQueue, setTimer: setGlobalTimer, setIsRunning } = useTimer();
   const [timerMinutes, setTimerMinutes] = useState("00");
   const [timerSeconds, setTimerSeconds] = useState("00");
   const [timerIntervalId, setTimerIntervalId] = useState(null);
   const [sessionType, setSessionType] = useState("Session");
   const { setIsTimerToggled } = useToggleTimer();
   const { alarm } = useAlarmOption();
+  const { tasks, toggleInProgressState } = useTask();
 
   const audioRef = useRef();
   const { audioVolume } = useAudioVolume();
@@ -130,17 +132,25 @@ export const Timer = () => {
 
   function toggleCountDown() {
     if (hasStarted) {
-      // started mode
+      // started mode - Parando el timer
+      console.log("Stopping timer");
       if (timerIntervalId) {
         clearInterval(timerIntervalId);
       }
       setTimerIntervalId(null);
+      setIsRunning(false);
+      setHasStarted(false);
     } else {
-      // stopped mode
+      // stopped mode - Iniciando el timer
+      console.log("Starting timer");
+      setIsRunning(true);
+      setHasStarted(true);
+      
       // create accurate date timer with date
       const newIntervalId = setInterval(() => {
         setTimer(prevTime => {
-          let newTime = prevTime - 1;
+          const newTime = prevTime - 1;
+          setGlobalTimer(newTime);
           let time = secondsToTime(newTime);
           // @ts-ignore
           setTimerMinutes(time[0]);
@@ -154,12 +164,15 @@ export const Timer = () => {
   }
 
   function handleResetTimer() {
+    console.log("Resetting timer");
     // @ts-ignore
     audioRef?.current?.load();
     if (timerIntervalId) {
       clearInterval(timerIntervalId);
     }
     setTimerIntervalId(null);
+    setIsRunning(false);
+    setHasStarted(false);
     setPomodoroLength(pomodoroLength);
     setShortBreak(shortBreakLength);
     setLongBreak(longBreakLength);
@@ -167,6 +180,13 @@ export const Timer = () => {
     setBreakStarted(false);
     setTimer(pomodoroLength);
     setTimerQueue(pomodoroLength);
+    setGlobalTimer(pomodoroLength);
+    // Detener todas las tareas en progreso
+    tasks.forEach(task => {
+      if (task.inProgress) {
+        toggleInProgressState(task.id, false);
+      }
+    });
   }
 
   function selectBreak(breakLength: number) {
