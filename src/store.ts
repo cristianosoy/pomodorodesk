@@ -397,16 +397,24 @@ export const useTask = create<ITaskState>(
         }));
       },
       setPomodoroCounter: id => {
-        set(state => ({
-          tasks: state.tasks.map(task =>
-            task.id === id
-              ? ({
-                  ...task,
-                  pomodoroCounter: task.pomodoroCounter < task.pomodoro ? task.pomodoroCounter + 1 : task.pomodoro,
-                } as ITask)
-              : task
-          ),
-        }));
+        set(state => {
+          const updatedTasks = state.tasks.map(task => {
+            if (task.id === id) {
+              const newCounter = task.pomodoroCounter < task.pomodoro ? task.pomodoroCounter + 1 : task.pomodoro;
+              console.log(`Store: Incrementing pomodoroCounter for task ${id}: ${task.pomodoroCounter} -> ${newCounter}`);
+              
+              return {
+                ...task,
+                pomodoroCounter: newCounter,
+                // Si completó todos los pomodoros, alerta
+                alerted: newCounter >= task.pomodoro ? true : task.alerted
+              } as ITask;
+            }
+            return task;
+          });
+          
+          return { tasks: updatedTasks };
+        });
       },
       setPomodoro: (id, newVal) => {
         set(state => ({

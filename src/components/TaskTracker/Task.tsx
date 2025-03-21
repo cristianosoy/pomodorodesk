@@ -63,8 +63,12 @@ export const Task = ({ task, tasks }) => {
     // Solo mostrar el tiempo actual almacenado en la tarea
     setDisplayTime(task.timeSpentSeconds || 0);
     
-    // No hacer nada más si la tarea no está en progreso o el timer no está corriendo
+    // No hacer nada si:
+    // 1. La tarea no está en progreso
+    // 2. El timer no está corriendo
+    // 3. Estamos en un break
     if (!task.inProgress || !isRunning || breakStarted) {
+      console.log(`Task ${task.id} timer not running - inProgress: ${task.inProgress}, isRunning: ${isRunning}, breakStarted: ${breakStarted}`);
       return;
     }
     
@@ -110,17 +114,30 @@ export const Task = ({ task, tasks }) => {
   
   // Manejar la finalización de un pomodoro
   useEffect(() => {
-    if (timerQueue === 0 && task.inProgress && !breakStarted) {
-      console.log(`Task ${task.id} pomodoro completed`);
-      setPomodoroCounter(task.id);
+    // Activamos este efecto cuando:
+    // 1. El timer llega a 0 (timerQueue === 0) y estamos en una sesión (!breakStarted)
+    // O
+    // 2. Cuando cambia el pomodoroCounter de la tarea (significa que se incrementó en el Timer)
+    
+    if (task.pomodoroCounter > 0) {
+      console.log(`Task ${task.id} has ${task.pomodoroCounter}/${task.pomodoro} pomodoros completed`);
       
       // Si se completaron todos los pomodoros, marcar como completada
-      if (task.pomodoroCounter + 1 >= task.pomodoro) {
+      if (task.pomodoroCounter >= task.pomodoro) {
+        console.log(`Task ${task.id} completed all pomodoros`);
         toggleInProgressState(task.id, false);
         setCompleted(task.id, true);
       }
     }
-  }, [timerQueue, breakStarted]);
+  }, [task.pomodoroCounter, task.pomodoro]);
+  
+  // Verificar si la tarea debe ser alertada (todos los pomodoros completados)
+  useEffect(() => {
+    if (task.pomodoroCounter === task.pomodoro && !task.alerted && !task.completed) {
+      console.log(`Task ${task.id} alerting - all pomodoros completed!`);
+      alertTask(task.id, true);
+    }
+  }, [task.pomodoroCounter, task.pomodoro]);
 
   const openContextMenu = event => {
     event.preventDefault();
@@ -154,13 +171,6 @@ export const Task = ({ task, tasks }) => {
     toggleMenu(task.id, false);
     if (task.completed) setCompleted(task.id, false);
   };
-
-  // Manejar la alerta cuando se completan todos los pomodoros
-  useEffect(() => {
-    if (task.pomodoroCounter === task.pomodoro && !task.alerted) {
-      alertTask(task.id, true);
-    }
-  }, [task.pomodoroCounter]);
 
   return (
     <>
