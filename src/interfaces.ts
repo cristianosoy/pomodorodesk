@@ -71,15 +71,18 @@ export interface IStickyNote {
   stickyNotesPosY: number;
   width: number;
   height: number;
+  isMinimized?: boolean;
 }
 
 export interface IStickyNoteState {
   stickyNotes: IStickyNote[];
   addStickyNote: (text: string) => void;
-  editNote: (id: number, newProp: string, newValue: string | number) => void;
+  editNote: (id: number, newProp: string, newValue: string | number | boolean) => void;
   removeNote: (id: number) => void;
   setStickyNotesPos: (id: number, X: number, Y: number) => void;
   setStickyNotesSize: (id: number, width: number, height: number) => void;
+  minimizeAllNotes: () => void;
+  organizeNotes: () => void;
 }
 
 export interface IToggleStickyNote {

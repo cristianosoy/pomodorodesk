@@ -297,6 +297,41 @@ export const useStickyNote = create<IStickyNoteState>(
           ),
         }));
       },
+      minimizeAllNotes: () => {
+        set(state => ({
+          stickyNotes: state.stickyNotes.map(note => ({
+            ...note,
+            isMinimized: true,
+            height: 40
+          }))
+        }));
+      },
+      organizeNotes: () => {
+        set(state => {
+          const notesPerColumn = 6; // Número máximo de notas por columna
+          const startX = 165; // Posición X inicial
+          const startY = 60; // Posición Y inicial
+          const columnWidth = 360; // Ancho suficiente para no superponerse
+          const rowHeight = 50; // Altura de cada fila (nota minimizada)
+          const noteWidth = 340; // Ancho estándar para todas las notas
+          
+          return {
+            stickyNotes: state.stickyNotes.map((note, index) => {
+              const column = Math.floor(index / notesPerColumn);
+              const row = index % notesPerColumn;
+              
+              return {
+                ...note,
+                isMinimized: true,
+                height: 40,
+                width: noteWidth,
+                stickyNotesPosX: startX + (column * columnWidth),
+                stickyNotesPosY: startY + (row * rowHeight)
+              };
+            })
+          };
+        });
+      }
     }),
     { name: "user_sticky_notes" }
   )

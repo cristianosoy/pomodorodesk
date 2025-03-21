@@ -1,4 +1,4 @@
-import { IoCloseSharp, IoEllipsisHorizontalSharp } from "react-icons/io5";
+import { IoCloseSharp, IoEllipsisHorizontalSharp, IoContractOutline, IoExpandOutline } from "react-icons/io5";
 import { MouseEventHandler, useState, useEffect } from "react";
 import { useStickyNote } from "@Store";
 import { ColorOptions } from "@Root/src/interfaces";
@@ -76,6 +76,8 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     height: currentNote?.height || 200 
   });
   const [wasLocked, setWasLocked] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(currentNote?.isMinimized || false);
+  const [prevHeight, setPrevHeight] = useState(currentNote?.height || 200);
 
   useEffect(() => {
     if (currentNote) {
@@ -86,6 +88,10 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
       // Cargar el título guardado si existe
       if (currentNote.title) {
         setNoteTitle(currentNote.title);
+      }
+      // Cargar el estado de minimización
+      if (currentNote.isMinimized !== undefined) {
+        setIsMinimized(currentNote.isMinimized);
       }
     }
   }, [currentNote]);
@@ -184,23 +190,45 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     }
   };
 
+  // Maneja la minimización de la nota
+  const toggleMinimize = (e) => {
+    e.stopPropagation();
+    
+    if (!isMinimized) {
+      // Guardar la altura actual antes de minimizar
+      setPrevHeight(size.height);
+      // Minimizar la nota (altura solo para la barra de título)
+      const newHeight = 40;
+      setSize({ ...size, height: newHeight });
+      setStickyNotesSize(id, size.width, newHeight);
+    } else {
+      // Restaurar a la altura anterior
+      setSize({ ...size, height: prevHeight });
+      setStickyNotesSize(id, size.width, prevHeight);
+    }
+    
+    // Actualizar el estado en el componente y en el store
+    setIsMinimized(!isMinimized);
+    editNote(id, "isMinimized", !isMinimized);
+  };
+
   return (
     <div className="sticky-wrapper" style={{ width: size.width, height: size.height }}>
       <ResizableBox
         width={size.width}
         height={size.height}
-        minConstraints={[150, 150]}
+        minConstraints={[150, isMinimized ? 40 : 150]}
         maxConstraints={[800, 600]}
         onResize={onResize}
         onResizeStart={onResizeStart}
         onResizeStop={onResizeStop}
-        resizeHandles={['se']}
+        resizeHandles={isMinimized ? [] : ['se']}
         className="sticky-container"
         style={{ backgroundColor: color }}
       >
         <div className="handle-drag" style={{ 
           backgroundColor: darkenColor(color),
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+          borderBottom: isMinimized ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'
         }}>
           <div className="flex w-full items-center p-1">
             <div className="drag-handle flex-grow flex items-center mr-2" style={{ minWidth: 0 }}>
@@ -228,39 +256,47 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
               </div>
             </div>
             <div className="flex items-center no-drag">
-              <div className="flex mr-2 color-dots">
-                {Object.values(ColorOptions).map(c => (
-                  <div
-                    key={c}
-                    className={`color-dot ${color === c ? 'active' : ''}`}
-                    style={{ backgroundColor: c }}
-                    onClick={() => selectColor(c)}
-                    title="Cambiar color"
-                  />
-                ))}
-              </div>
+              {!isMinimized && (
+                <div className="flex mr-2 color-dots">
+                  {Object.values(ColorOptions).map(c => (
+                    <div
+                      key={c}
+                      className={`color-dot ${color === c ? 'active' : ''}`}
+                      style={{ backgroundColor: c }}
+                      onClick={() => selectColor(c)}
+                      title="Cambiar color"
+                    />
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={toggleMinimize}
+                className="text-gray-700 hover:bg-gray-200 rounded p-1 mr-1"
+                title={isMinimized ? "Maximizar nota" : "Minimizar nota"}
+              >
+                {isMinimized ? 
+                  <IoExpandOutline size={16} /> : 
+                  <IoContractOutline size={16} />
+                }
+              </button>
               <IoCloseSharp 
-                className="cursor-pointer text-red-500 hover:bg-red-200" 
+                className="cursor-pointer text-red-500 hover:bg-red-200 rounded" 
                 size={18} 
                 onClick={handleCloseClick}
               />
             </div>
           </div>
         </div>
-        <div className="editor-content m-auto break-words rounded pl-4 pb-4 pr-4" style={{ overflow: 'hidden', position: 'relative' }}>
-          <RichTextEditor
-            value={text}
-            onChange={(value) => {
-              editNote(id, "text", value);
-            }}
-            placeholder="Add a note..."
-          />
-        </div>
+        {!isMinimized && (
+          <div className="editor-content m-auto break-words rounded pl-4 pb-4 pr-4" style={{ overflow: 'hidden', position: 'relative' }}>
+            <RichTextEditor id={id} initialText={text} />
+          </div>
+        )}
       </ResizableBox>
       <ConfirmModal 
-        isVisible={showConfirmModal}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        isVisible={showConfirmModal} 
+        onConfirm={confirmDelete} 
+        onCancel={cancelDelete} 
         title={noteTitle}
       />
     </div>

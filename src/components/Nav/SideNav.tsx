@@ -6,6 +6,8 @@ import { MdOutlineTimer, MdWbSunny, MdDarkMode, MdOutlineNoteAdd, MdOutlineViewK
 import { VscDebugRestartFrame } from "react-icons/vsc";
 import { BsArrowsFullscreen, BsFillChatLeftQuoteFill, BsTwitch, BsYoutube } from "react-icons/bs";
 import { FaSpotify } from "react-icons/fa";
+import { TbArrowsShuffle2, TbLayoutGridAdd, TbLayoutCollage, TbLayoutList } from "react-icons/tb";
+import { LuLayoutGrid } from "react-icons/lu";
 import {
   useToggleMusic,
   useToggleTimer,
@@ -44,7 +46,7 @@ export const SideNav = () => {
   const { isYoutubeToggled, setIsYoutubeToggled } = useToggleYoutube();
 
   const { isTimerShown } = useToggleTimer();
-  const { isStickyNoteShown } = useToggleStickyNote();
+  const { isStickyNoteShown, setIsStickyNoteShown } = useToggleStickyNote();
   const { isTasksShown } = useToggleTasks();
   const { isMusicShown } = useToggleMusic();
   const { isKanbanShown } = useToggleKanban();
@@ -58,7 +60,7 @@ export const SideNav = () => {
 
   const { sideNavOrder, setSideNavOrder } = useSideNavOrderStore();
 
-  const { stickyNotes, addStickyNote } = useStickyNote();
+  const { stickyNotes, addStickyNote, organizeNotes } = useStickyNote();
   const setDefault = useSetDefault();
 
   useEffect(() => {
@@ -70,6 +72,21 @@ export const SideNav = () => {
     });
   }, []);
 
+  // Verificar si el elemento ya existe en sideNavOrder y añadirlo si no está
+  useEffect(() => {
+    if (sideNavOrder && !sideNavOrder.includes(12)) {
+      setSideNavOrder([...sideNavOrder, 12]);
+    }
+  }, []);
+
+  // Verificar si el elemento de organizar notas ya existe en sideNavOrder
+  useEffect(() => {
+    const organizeNotesId = 13; // ID del botón de organizar notas
+    if (sideNavOrder && !sideNavOrder.includes(organizeNotesId)) {
+      setSideNavOrder([...sideNavOrder, organizeNotesId]);
+    }
+  }, []);
+
   function toggleDefaultPositions() {
     setDefault();
     defaultToast("Positions reset");
@@ -77,6 +94,12 @@ export const SideNav = () => {
 
   function addNewStickyNote() {
     addStickyNote("");
+  }
+
+  function organizeStickyNotes() {
+    organizeNotes();
+    setIsStickyNoteShown(true);
+    defaultToast("Notas organizadas");
   }
 
   function toggleNavBar() {
@@ -135,6 +158,16 @@ export const SideNav = () => {
       toggleString: "Sticky Note Toggled",
       toggleIcon: "📝",
       isShown: isStickyNoteShown,
+    },
+    {
+      id: "13",
+      content: <LuLayoutGrid className="h-6 w-6" />,
+      tooltipTitle: "Organizar Notas",
+      isToggled: stickyNotes.length > 0,
+      setToggled: organizeStickyNotes,
+      toggleString: "Organizar Notas",
+      toggleIcon: "🗂️",
+      isShown: isStickyNoteShown && stickyNotes.length > 0,
     },
     {
       id: "6",

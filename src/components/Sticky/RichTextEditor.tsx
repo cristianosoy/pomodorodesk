@@ -12,6 +12,7 @@ import { BiUndo, BiRedo } from 'react-icons/bi';
 import { TbClearFormatting } from 'react-icons/tb';
 import { ImageModal } from './ImageModal';
 import { useState } from 'react';
+import { useStickyNote } from '@Store';
 import './RichTextEditor.scss';
 
 // Importar fuente Kalam
@@ -25,12 +26,13 @@ const KalamFont = () => {
 };
 
 interface RichTextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
+  id: number;
+  initialText: string;
   placeholder?: string;
 }
 
-const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: RichTextEditorProps) => {
+const RichTextEditor = ({ id, initialText, placeholder = 'Add a note...' }: RichTextEditorProps) => {
+  const { editNote } = useStickyNote();
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
 
@@ -76,9 +78,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Add a note...' }: Rich
         placeholder,
       }),
     ],
-    content: value,
+    content: initialText,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      editNote(id, "text", editor.getHTML());
     },
     editorProps: {
       attributes: {
