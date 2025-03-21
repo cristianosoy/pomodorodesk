@@ -65,13 +65,21 @@ export const Settings = ({ setOpenSettings, Task }) => {
       </div>
       <div className="flex items-center justify-between border-b-2 border-gray-100 px-2 pb-2">
         <div>Change Pomodoro's</div>
-        <div className="bg-gray-200 dark:bg-gray-700 dark:text-gray-200">
-          <div className="flex space-x-5 p-2">
-            <button id="decrement" onClick={e => handlePomoChange(e)}>
+        <div className="bg-gray-200 dark:bg-gray-700 dark:text-gray-200 rounded-md">
+          <div className="flex items-center space-x-5 p-2">
+            <button 
+              id="decrement" 
+              onClick={e => handlePomoChange(e)}
+              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 transition-colors"
+            >
               &lt;
             </button>
-            <div>{changePomo}</div>
-            <button id="increment" onClick={e => handlePomoChange(e)}>
+            <div className="font-medium">{changePomo}</div>
+            <button 
+              id="increment" 
+              onClick={e => handlePomoChange(e)}
+              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 transition-colors"
+            >
               &gt;
             </button>
           </div>

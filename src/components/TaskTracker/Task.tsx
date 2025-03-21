@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { FaCheck } from "react-icons/fa";
+import { FaCheck, FaEdit, FaTrash } from "react-icons/fa";
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoCloseSharp } from "react-icons/io5";
@@ -187,6 +187,11 @@ export const Task = ({ task, tasks }) => {
     toggleInProgressState(task.id, !task.inProgress);
   };
 
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    setOpenSettings(true);
+  };
+
   const markNotCompleteWhenTracking = () => {
     toggleInProgressState(task.id, !task.inProgress);
     toggleMenu(task.id, false);
@@ -206,6 +211,7 @@ export const Task = ({ task, tasks }) => {
             !task.inProgress && !task.completed && !task.alerted && "border-gray-600 bg-gray-700/80 text-gray-100"
           )}
           onClick={preventFalseInProgress}
+          onDoubleClick={handleDoubleClick}
         >
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center">
@@ -238,16 +244,23 @@ export const Task = ({ task, tasks }) => {
                 </div>
               </div>
 
-              {/* Menú de opciones */}
-              <div className="relative">
-                <BsThreeDotsVertical
-                  className={clsx(
-                    "opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-                    task.menuToggled && "opacity-100"
-                  )}
+              {/* Iconos de acciones */}
+              <div className="flex items-center space-x-2 ml-2">
+                {/* Icono para editar tarea */}
+                <FaEdit
+                  className="cursor-pointer text-gray-300 hover:text-blue-500 transition-colors"
                   onClick={e => {
                     e.stopPropagation();
-                    openContextMenu(e);
+                    setOpenSettings(true);
+                  }}
+                />
+                
+                {/* Icono para eliminar tarea */}
+                <FaTrash
+                  className="cursor-pointer text-gray-300 hover:text-red-500 transition-colors"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDelete();
                   }}
                 />
               </div>

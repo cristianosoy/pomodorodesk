@@ -114,6 +114,7 @@ export interface ITaskState {
   renameTask: (id: number, newName: string) => void;
   removeTask: (id: number) => void;
   removeAllTasks: () => void;
+  removeCompletedTasks: () => void;
   toggleInProgressState: (id: number, flag: boolean) => void;
   setCompleted: (id: number, flag: boolean) => void;
   setPomodoroCounter: (id: number) => void;

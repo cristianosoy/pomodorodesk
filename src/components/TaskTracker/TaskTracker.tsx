@@ -19,11 +19,15 @@ interface TaskTrackerProps {
 export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
   const [showAddTask, setShowAddTask] = useState(false);
   const { setIsTasksToggled } = useToggleTasks();
-  const { tasks, removeAllTasks } = useTask();
+  const { tasks, removeAllTasks, removeCompletedTasks } = useTask();
   const { taskWidth, taskHeight, setTaskSize } = usePosTask();
   const [isTaskInfoModalOpen, setIsTaskInfoModalOpen] = useState(false);
   const [isClearTasksModalOpen, setIsClearTasksModalOpen] = useState(false);
+  const [isClearCompletedModalOpen, setIsClearCompletedModalOpen] = useState(false);
   const [size, setSize] = useState({ width: taskWidth || 288, height: taskHeight || 400 }); // w-72 = 18rem = 288px
+
+  // Verificar si hay tareas completadas
+  const hasCompletedTasks = tasks.some(task => task.completed);
 
   useEffect(() => {
     // Inicializar el tamaño con los valores guardados
@@ -59,6 +63,16 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
             removeAllTasks();
             setIsClearTasksModalOpen(false);
           }}
+          isCompletedOnly={false}
+        />
+        <ClearTasksModal 
+          isVisible={isClearCompletedModalOpen} 
+          onClose={() => setIsClearCompletedModalOpen(false)}
+          onConfirm={() => {
+            removeCompletedTasks();
+            setIsClearCompletedModalOpen(false);
+          }}
+          isCompletedOnly={true}
         />
         <IoInformationCircleOutline
           className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors dark:text-gray-500 dark:hover:text-gray-300"
@@ -77,7 +91,14 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
         </div>
         <div className="px-4 py-3 mt-auto">
           {tasks.length > 0 && (
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="primary" 
+                onClick={() => setIsClearCompletedModalOpen(true)}
+                disabled={!hasCompletedTasks}
+              >
+                Limpiar
+              </Button>
               <Button variant="danger" onClick={() => setIsClearTasksModalOpen(true)}>
                 Clear All
               </Button>

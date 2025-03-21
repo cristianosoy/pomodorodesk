@@ -348,6 +348,14 @@ export const useTask = create<ITaskState>(
         }));
       },
       removeAllTasks: () => set({ tasks: [] }),
+      
+      // Eliminar solo las tareas completadas
+      removeCompletedTasks: () => {
+        set(state => ({
+          tasks: state.tasks.filter(task => !task.completed)
+        }));
+      },
+      
       toggleInProgressState: (id, flag) => {
         console.log(`toggleInProgressState: id=${id}, flag=${flag}`);
         set(state => ({

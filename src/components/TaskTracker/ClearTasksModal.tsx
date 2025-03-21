@@ -6,9 +6,15 @@ interface ClearTasksModalProps {
   isVisible: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isCompletedOnly?: boolean;
 }
 
-export const ClearTasksModal = ({ isVisible = false, onClose, onConfirm }: ClearTasksModalProps) => {
+export const ClearTasksModal = ({ 
+  isVisible = false, 
+  onClose, 
+  onConfirm, 
+  isCompletedOnly = false 
+}: ClearTasksModalProps) => {
   const keydownHandler = ({ key }: KeyboardEvent) => {
     switch (key) {
       case "Escape":
@@ -24,6 +30,13 @@ export const ClearTasksModal = ({ isVisible = false, onClose, onConfirm }: Clear
   });
 
   if (!isVisible) return null;
+
+  // Textos según el tipo de modal
+  const title = isCompletedOnly ? "Eliminar Tareas Completadas" : "Eliminar Todas las Tareas";
+  const confirmButtonText = isCompletedOnly ? "Eliminar Completadas" : "Eliminar Todo";
+  const questionText = isCompletedOnly 
+    ? "¿Estás seguro que deseas eliminar todas las tareas completadas?" 
+    : "¿Estás seguro que deseas eliminar todas las tareas?";
 
   return (
     <div 
@@ -41,10 +54,10 @@ export const ClearTasksModal = ({ isVisible = false, onClose, onConfirm }: Clear
           />
         </div>
         <div className="border-gray-100 pb-2">
-          <div className="rounded pb-2 text-center font-bold text-lg">Eliminar Todas las Tareas</div>
+          <div className="rounded pb-2 text-center font-bold text-lg">{title}</div>
           <hr className="border-t-2 w-1/4 mx-auto border-gray-200 dark:border-gray-600" />
           <div className="items-center p-4 text-center">
-            ¿Estás seguro que deseas eliminar todas las tareas?
+            {questionText}
             <br />
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Esta acción no se puede deshacer
@@ -56,7 +69,7 @@ export const ClearTasksModal = ({ isVisible = false, onClose, onConfirm }: Clear
             Cancelar
           </Button>
           <Button variant="danger" onClick={onConfirm}>
-            Eliminar Todo
+            {confirmButtonText}
           </Button>
         </div>
       </div>
