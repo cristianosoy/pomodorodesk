@@ -15,6 +15,36 @@ interface StickyProps {
   setIsDragging: (isDragging: boolean) => void;
 }
 
+// Componente para el modal de confirmación
+const ConfirmModal = ({ isVisible, onConfirm, onCancel, title }) => {
+  if (!isVisible) return null;
+  
+  return (
+    <div className="sticky-modal-overlay" onClick={onCancel}>
+      <div className="sticky-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky-modal-header">Confirmar</div>
+        <div className="sticky-modal-body">
+          ¿Estás seguro de que deseas eliminar la nota "{title}"?
+        </div>
+        <div className="sticky-modal-footer">
+          <button 
+            className="sticky-modal-btn sticky-modal-btn-cancel" 
+            onClick={onCancel}
+          >
+            Cancelar
+          </button>
+          <button 
+            className="sticky-modal-btn sticky-modal-btn-confirm" 
+            onClick={onConfirm}
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Función para oscurecer un color hexadecimal
 const darkenColor = (color: string, amount: number = 30): string => {
   // Remover el signo # si existe
@@ -39,6 +69,7 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   const { setAreWidgetsLocked } = useLockWidgetsStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [noteTitle, setNoteTitle] = useState(`Nota ${Math.floor(Math.random() * 100) + 1}`);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const currentNote = stickyNotes.find(note => note.id === id);
   const [size, setSize] = useState({ 
     width: currentNote?.width || 215, 
@@ -112,6 +143,23 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
         editNote(id, "title", noteTitle);
       }
     }
+  };
+
+  // Maneja el clic en el botón de cerrar
+  const handleCloseClick = (e) => {
+    e.stopPropagation();
+    setShowConfirmModal(true);
+  };
+
+  // Confirma la eliminación de la nota
+  const confirmDelete = () => {
+    removeNote(id);
+    setShowConfirmModal(false);
+  };
+
+  // Cancela la eliminación de la nota
+  const cancelDelete = () => {
+    setShowConfirmModal(false);
   };
 
   // Handles resize start
@@ -194,7 +242,7 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
               <IoCloseSharp 
                 className="cursor-pointer text-red-500 hover:bg-red-200" 
                 size={18} 
-                onClick={() => removeNote(id)}
+                onClick={handleCloseClick}
               />
             </div>
           </div>
@@ -209,6 +257,12 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
           />
         </div>
       </ResizableBox>
+      <ConfirmModal 
+        isVisible={showConfirmModal}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        title={noteTitle}
+      />
     </div>
   );
 };
