@@ -621,7 +621,10 @@ export const usePosTask = create<IPosTask>(
     (set, _) => ({
       taskPosX: 804,
       taskPosY: 302,
+      taskWidth: 288,
+      taskHeight: 400,
       setTaskPos: (X, Y) => set({ taskPosX: X, taskPosY: Y }),
+      setTaskSize: (width, height) => set({ taskWidth: width, taskHeight: height }),
       setTaskPosDefault: () => set(() => ({ taskPosX: 804, taskPosY: 306 })),
     }),
     {

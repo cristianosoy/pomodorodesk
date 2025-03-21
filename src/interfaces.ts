@@ -184,7 +184,10 @@ export interface IPosKanban {
 export interface IPosTask {
   taskPosX: number;
   taskPosY: number;
+  taskWidth: number;
+  taskHeight: number;
   setTaskPos: (X: number, Y: number) => void;
+  setTaskSize: (width: number, height: number) => void;
   setTaskPosDefault: () => void;
 }
 

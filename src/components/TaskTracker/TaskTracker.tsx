@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "./Header";
 import { Tasks } from "./Tasks";
 import { AddTask } from "./AddTask";
 import { IoCloseSharp, IoInformationCircleOutline } from "react-icons/io5";
-import { useTask, useToggleTasks } from "@Store";
+import { useTask, useToggleTasks, usePosTask } from "@Store";
 import { TaskInfoModal } from "@App/components/TaskTracker/InfoModal";
 import { ClearTasksModal } from "@App/components/TaskTracker/ClearTasksModal";
 import { Button } from "@Components/Common/Button";
@@ -20,12 +20,23 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
   const [showAddTask, setShowAddTask] = useState(false);
   const { setIsTasksToggled } = useToggleTasks();
   const { tasks, removeAllTasks } = useTask();
+  const { taskWidth, taskHeight, setTaskSize } = usePosTask();
   const [isTaskInfoModalOpen, setIsTaskInfoModalOpen] = useState(false);
   const [isClearTasksModalOpen, setIsClearTasksModalOpen] = useState(false);
-  const [size, setSize] = useState({ width: 288, height: 400 }); // w-72 = 18rem = 288px
+  const [size, setSize] = useState({ width: taskWidth || 288, height: taskHeight || 400 }); // w-72 = 18rem = 288px
+
+  useEffect(() => {
+    // Inicializar el tamaño con los valores guardados
+    setSize({ width: taskWidth, height: taskHeight });
+  }, [taskWidth, taskHeight]);
 
   const onResize = (_event: React.SyntheticEvent, { size: newSize }: { size: { width: number; height: number } }) => {
     setSize({ width: newSize.width, height: newSize.height });
+  };
+
+  const onResizeStop = () => {
+    // Guardar el tamaño cuando se termina de redimensionar
+    setTaskSize(size.width, size.height);
   };
 
   return (
@@ -35,6 +46,7 @@ export const TaskTracker = ({ setIsDraggingTask }: TaskTrackerProps) => {
       minConstraints={[288, 300]} // min width w-72 (18rem)
       maxConstraints={[576, 800]} // max width w-144 (36rem)
       onResize={onResize}
+      onResizeStop={onResizeStop}
       resizeHandles={['se']}
       className="mb-2 rounded-xl border border-gray-200/30 bg-white/[.96] shadow-lg backdrop-blur-sm dark:border-gray-700/30 dark:bg-gray-800/[.96] flex flex-col"
     >
