@@ -147,6 +147,7 @@ export interface ISongTask {
   id: string;
   artist: string;
   link: string;
+  image?: string;
 }
 
 export interface ISongState {
