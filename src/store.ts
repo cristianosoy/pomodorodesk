@@ -372,11 +372,15 @@ export const useTask = create<ITaskState>(
                 } as ITask;
               } else {
                 // Si estamos desactivando la tarea, calculamos el tiempo transcurrido
-                const elapsedSeconds = task.startTime 
-                  ? Math.floor((Date.now() - task.startTime) / 1000) 
-                  : 0;
+                // Solo si el timer está corriendo
+                const isTimerRunning = useTimer.getState().isRunning;
+                const isBreakStarted = useBreakStarted.getState().breakStarted;
                 
-                console.log(`Task ${id}: Adding ${elapsedSeconds}s to ${task.timeSpentSeconds || 0}s`);
+                let elapsedSeconds = 0;
+                if (task.startTime && isTimerRunning && !isBreakStarted) {
+                  elapsedSeconds = Math.floor((Date.now() - task.startTime) / 1000);
+                  console.log(`Task ${id}: Adding ${elapsedSeconds}s to ${task.timeSpentSeconds || 0}s`);
+                }
                 
                 return {
                   ...task,
@@ -392,8 +396,11 @@ export const useTask = create<ITaskState>(
       },
       updateTaskTime: () => {
         set(state => {
+          const isTimerRunning = useTimer.getState().isRunning;
+          const isBreakStarted = useBreakStarted.getState().breakStarted;
+          
           const updatedTasks = [...state.tasks].map(task => {
-            if (task.inProgress && task.startTime) {
+            if (task.inProgress && task.startTime && isTimerRunning && !isBreakStarted) {
               const elapsedSeconds = Math.floor((Date.now() - task.startTime) / 1000);
               return {
                 ...task,
