@@ -40,6 +40,7 @@
     "scroll-snap": "^4.0.3",
     "tsparticles": "^2.1.0",
     "tsparticles-engine": "^2.1.0",
+    "usehooks-ts": "^3.1.1",
     "uuid": "^8.3.2",
     "uuidv4": "^6.2.13",
     "zustand": "^3.7.0"

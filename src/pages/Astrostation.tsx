@@ -27,7 +27,6 @@ import { TaskTracker } from "@Components/TaskTracker/TaskTracker";
 import { Spotify } from "@Components/Player/Spotify/Player";
 import { BackgroundNav } from "@Components/Nav/BackgroundNav";
 import { DWrapper } from "@Components/Dragggable/Draggable";
-import { CryptoDonationButton } from "@App/components/Crypto/Donation";
 import { CustomizationButton } from "@App/components/Common/Buttons/CustomizationButton";
 import { GoGear } from "react-icons/go";
 import { SettingsModal } from "@App/components/Settings/Modal";
@@ -44,7 +43,6 @@ import { UnsplashFooter } from "../components/Nav/UnsplashFooter";
 import clsx from "clsx";
 import React from "react";
 import { Background } from "@App/App";
-import BottomButtons from "@Components/Nav/BottomButtons";
 
 export const Astrostation = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { isMusicToggled, isMusicShown } = useToggleMusic();
@@ -108,8 +106,6 @@ export const Astrostation = React.forwardRef<HTMLDivElement>((_props, ref) => {
           />
         </div>
       </div>
-      <CryptoDonationButton />
-      <BottomButtons />
       {!isDesktop ? (
         <div className="ml-8 flex flex-col items-center">
           <div className={clsx(isMusicToggled ? "block" : "hidden")}>
