@@ -32,9 +32,14 @@ interface RichTextEditorProps {
 }
 
 const RichTextEditor = ({ id, initialText, placeholder = 'Add a note...' }: RichTextEditorProps) => {
-  const { editNote } = useStickyNote();
+  const { editNote, stickyNotes } = useStickyNote();
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
+  const currentNote = stickyNotes.find(note => note.id === id);
+
+  const handleTextChange = (newText: string) => {
+    editNote(id, newText);
+  };
 
   const editor = useEditor({
     extensions: [
@@ -63,8 +68,8 @@ const RichTextEditor = ({ id, initialText, placeholder = 'Add a note...' }: Rich
         linkOnPaste: true,
         HTMLAttributes: {
           class: 'note-link',
-          target: '_blank', // Abrir enlaces en nueva pestaña
-          rel: 'noopener noreferrer', // Seguridad para enlaces externos
+          target: '_blank',
+          rel: 'noopener noreferrer',
         },
       }),
       Image.configure({
@@ -80,7 +85,7 @@ const RichTextEditor = ({ id, initialText, placeholder = 'Add a note...' }: Rich
     ],
     content: initialText,
     onUpdate: ({ editor }) => {
-      editNote(id, "text", editor.getHTML());
+      handleTextChange(editor.getHTML());
     },
     editorProps: {
       attributes: {

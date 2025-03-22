@@ -270,7 +270,10 @@ export const useStickyNote = create<IStickyNoteState>(
           stickyNotes: state.stickyNotes.map(note =>
             note.id === id ? {
               ...note,
-              ...(text.startsWith('{') ? JSON.parse(text) : { text })
+              ...(text.startsWith('{') ? 
+                JSON.parse(text) : 
+                { text }
+              )
             } : note
           ),
         }));

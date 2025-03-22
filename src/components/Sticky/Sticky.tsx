@@ -222,31 +222,25 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     e.stopPropagation();
     
     const newIsMinimized = !isMinimized;
+    const newHeight = newIsMinimized ? 40 : (prevHeight > 40 ? prevHeight : 200);
     
-    if (newIsMinimized) {
-      // Guardar la altura actual antes de minimizar
-      setPrevHeight(size.height);
-      // Minimizar la nota (altura solo para la barra de título)
-      const newHeight = 40;
-      setSize({ ...size, height: newHeight });
-      setStickyNotesSize(id, size.width, newHeight);
-    } else {
-      // Restaurar a la altura anterior
-      const restoredHeight = prevHeight > 40 ? prevHeight : 200;
-      setSize({ ...size, height: restoredHeight });
-      setStickyNotesSize(id, size.width, restoredHeight);
-    }
-    
-    // Actualizar el estado en el componente y en el store
+    // Actualizar el estado local
     setIsMinimized(newIsMinimized);
+    setSize({ ...size, height: newHeight });
     
-    // Actualizar la nota en el store
-    const updatedNote = {
-      ...currentNote,
-      isMinimized: newIsMinimized,
-      height: newIsMinimized ? 40 : (prevHeight > 40 ? prevHeight : 200)
-    };
-    editNote(id, JSON.stringify(updatedNote));
+    // Actualizar el tamaño en el store
+    setStickyNotesSize(id, size.width, newHeight);
+    
+    // Actualizar el estado de minimización en el store
+    if (currentNote) {
+      const updatedNote = {
+        ...currentNote,
+        isMinimized: newIsMinimized,
+        height: newHeight,
+        text: currentNote.text // Mantener el texto original
+      };
+      editNote(id, JSON.stringify(updatedNote));
+    }
   };
 
   return (
