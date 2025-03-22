@@ -60,7 +60,7 @@ export const SideNav = () => {
 
   const { sideNavOrder, setSideNavOrder } = useSideNavOrderStore();
 
-  const { stickyNotes, addStickyNote, organizeNotes } = useStickyNote();
+  const { stickyNotes, addStickyNote, toggleAllNotesMinimized } = useStickyNote();
   const setDefault = useSetDefault();
 
   useEffect(() => {
@@ -94,12 +94,12 @@ export const SideNav = () => {
 
   function addNewStickyNote() {
     addStickyNote("");
+    setIsStickyNoteShown(true);
   }
 
   function organizeStickyNotes() {
-    organizeNotes();
+    toggleAllNotesMinimized();
     setIsStickyNoteShown(true);
-    defaultToast("Notas organizadas");
   }
 
   function toggleNavBar() {

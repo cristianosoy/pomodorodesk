@@ -69,20 +69,20 @@ export interface IStickyNote {
   title?: string;
   stickyNotesPosX: number;
   stickyNotesPosY: number;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   isMinimized?: boolean;
 }
 
 export interface IStickyNoteState {
   stickyNotes: IStickyNote[];
   addStickyNote: (text: string) => void;
-  editNote: (id: number, newProp: string, newValue: string | number | boolean) => void;
+  editNote: (id: number, text: string) => void;
   removeNote: (id: number) => void;
   setStickyNotesPos: (id: number, X: number, Y: number) => void;
   setStickyNotesSize: (id: number, width: number, height: number) => void;
-  minimizeAllNotes: () => void;
   organizeNotes: () => void;
+  toggleAllNotesMinimized: () => void;
 }
 
 export interface IToggleStickyNote {

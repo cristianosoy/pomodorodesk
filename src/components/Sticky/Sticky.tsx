@@ -82,23 +82,34 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   useEffect(() => {
     if (currentNote) {
       setSize({ 
-        width: currentNote.width, 
-        height: currentNote.height 
+        width: currentNote.width || 215, 
+        height: currentNote.isMinimized ? 40 : (currentNote.height || 200)
       });
       // Cargar el título guardado si existe
       if (currentNote.title) {
         setNoteTitle(currentNote.title);
       }
       // Cargar el estado de minimización
-      if (currentNote.isMinimized !== undefined) {
-        setIsMinimized(currentNote.isMinimized);
-      }
+      setIsMinimized(!!currentNote.isMinimized);
     }
   }, [currentNote]);
 
+  useEffect(() => {
+    if (isMinimized) {
+      setSize(prev => ({ ...prev, height: 40 }));
+    } else {
+      setSize(prev => ({ ...prev, height: 200 }));
+    }
+    setStickyNotesSize(id, size.width, size.height);
+  }, [isMinimized, id, setStickyNotesSize]);
+
   // Sets the selected color
   const selectColor = (selectedColor: string) => {
-    editNote(id, "color", selectedColor);
+    const updatedNote = {
+      ...currentNote,
+      color: selectedColor
+    };
+    editNote(id, JSON.stringify(updatedNote));
   };
 
   // Generar un título aleatorio si está vacío
@@ -130,9 +141,17 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
     if (!noteTitle.trim()) {
       const newTitle = generateRandomTitle();
       setNoteTitle(newTitle);
-      editNote(id, "title", newTitle);
+      const updatedNote = {
+        ...currentNote,
+        title: newTitle
+      };
+      editNote(id, JSON.stringify(updatedNote));
     } else {
-      editNote(id, "title", noteTitle);
+      const updatedNote = {
+        ...currentNote,
+        title: noteTitle
+      };
+      editNote(id, JSON.stringify(updatedNote));
     }
   };
 
@@ -144,9 +163,17 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
       if (!noteTitle.trim()) {
         const newTitle = generateRandomTitle();
         setNoteTitle(newTitle);
-        editNote(id, "title", newTitle);
+        const updatedNote = {
+          ...currentNote,
+          title: newTitle
+        };
+        editNote(id, JSON.stringify(updatedNote));
       } else {
-        editNote(id, "title", noteTitle);
+        const updatedNote = {
+          ...currentNote,
+          title: noteTitle
+        };
+        editNote(id, JSON.stringify(updatedNote));
       }
     }
   };
@@ -194,7 +221,9 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
   const toggleMinimize = (e) => {
     e.stopPropagation();
     
-    if (!isMinimized) {
+    const newIsMinimized = !isMinimized;
+    
+    if (newIsMinimized) {
       // Guardar la altura actual antes de minimizar
       setPrevHeight(size.height);
       // Minimizar la nota (altura solo para la barra de título)
@@ -203,13 +232,21 @@ export const Sticky = ({ id, text, color, setIsDragging }: StickyProps) => {
       setStickyNotesSize(id, size.width, newHeight);
     } else {
       // Restaurar a la altura anterior
-      setSize({ ...size, height: prevHeight });
-      setStickyNotesSize(id, size.width, prevHeight);
+      const restoredHeight = prevHeight > 40 ? prevHeight : 200;
+      setSize({ ...size, height: restoredHeight });
+      setStickyNotesSize(id, size.width, restoredHeight);
     }
     
     // Actualizar el estado en el componente y en el store
-    setIsMinimized(!isMinimized);
-    editNote(id, "isMinimized", !isMinimized);
+    setIsMinimized(newIsMinimized);
+    
+    // Actualizar la nota en el store
+    const updatedNote = {
+      ...currentNote,
+      isMinimized: newIsMinimized,
+      height: newIsMinimized ? 40 : (prevHeight > 40 ? prevHeight : 200)
+    };
+    editNote(id, JSON.stringify(updatedNote));
   };
 
   return (

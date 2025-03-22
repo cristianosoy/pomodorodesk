@@ -218,6 +218,19 @@ export const usePomodoroTimer = create<IPomodoroTime>(
  * Handle the sticky notes created in the tasks section
  */
 
+const StickyNoteColors = {
+  Yellow: '#fef08a',
+  Green: '#bbf7d0',
+  Blue: '#bfdbfe',
+  Purple: '#ddd6fe',
+  Pink: '#fbcfe8',
+};
+
+const getRandomColor = () => {
+  const colors = Object.values(StickyNoteColors);
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
 export const useToggleStickyNote = create<IToggleStickyNote>(
   persist(
     (set, _) => ({
@@ -232,7 +245,7 @@ export const useToggleStickyNote = create<IToggleStickyNote>(
 
 export const useStickyNote = create<IStickyNoteState>(
   persist(
-    (set, _) => ({
+    (set, get) => ({
       stickyNotes: [],
       addStickyNote: (text: string) => {
         set(state => {
@@ -242,27 +255,23 @@ export const useStickyNote = create<IStickyNoteState>(
               ...state.stickyNotes,
               {
                 id: Date.now() + state.stickyNotes.length,
-                text: text,
-                title: `Nota ${noteNumber}`,
-                color: ColorOptions.Yellow,
+                text,
+                color: getRandomColor(),
                 stickyNotesPosX: 165,
                 stickyNotesPosY: 0,
-                width: 340,
-                height: 200
+                isMinimized: false
               } as IStickyNote,
             ],
           };
         });
       },
-      editNote: (id, newProp, newValue) => {
+      editNote: (id: number, text: string) => {
         set(state => ({
           stickyNotes: state.stickyNotes.map(note =>
-            note.id === id
-              ? {
-                  ...note,
-                  [newProp]: newValue,
-                }
-              : note
+            note.id === id ? {
+              ...note,
+              ...(text.startsWith('{') ? JSON.parse(text) : { text })
+            } : note
           ),
         }));
       },
@@ -308,28 +317,45 @@ export const useStickyNote = create<IStickyNoteState>(
       },
       organizeNotes: () => {
         set(state => {
-          const notesPerColumn = 6; // Número máximo de notas por columna
-          const startX = 165; // Posición X inicial
-          const startY = 60; // Posición Y inicial
-          const columnWidth = 360; // Ancho suficiente para no superponerse
-          const rowHeight = 50; // Altura de cada fila (nota minimizada)
-          const noteWidth = 340; // Ancho estándar para todas las notas
-          
+          const startX = 165; // Posición inicial X
+          const startY = 20;  // Posición inicial Y
+          const columnWidth = 320; // Ancho de cada columna
+          const rowHeight = 50;   // Alto de cada fila cuando está minimizado
+          const maxColumns = 3;    // Máximo número de columnas
+
           return {
             stickyNotes: state.stickyNotes.map((note, index) => {
-              const column = Math.floor(index / notesPerColumn);
-              const row = index % notesPerColumn;
-              
+              const column = index % maxColumns;
+              const row = Math.floor(index / maxColumns);
+
               return {
                 ...note,
-                isMinimized: true,
-                height: 40,
-                width: noteWidth,
                 stickyNotesPosX: startX + (column * columnWidth),
-                stickyNotesPosY: startY + (row * rowHeight)
+                stickyNotesPosY: startY + (row * rowHeight),
+                isMinimized: true
               };
             })
           };
+        });
+      },
+      toggleAllNotesMinimized: () => {
+        set(state => {
+          const allMinimized = state.stickyNotes.every(note => note.isMinimized);
+          
+          if (allMinimized) {
+            // Si todas están minimizadas, maximizarlas y restaurar sus posiciones originales
+            return {
+              stickyNotes: state.stickyNotes.map(note => ({
+                ...note,
+                isMinimized: false
+              }))
+            };
+          } else {
+            // Si no todas están minimizadas, organizarlas
+            const { organizeNotes } = get();
+            organizeNotes();
+            return state;
+          }
         });
       }
     }),
