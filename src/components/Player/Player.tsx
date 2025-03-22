@@ -410,7 +410,7 @@ export const Player = () => {
               >
                 <IconContext.Provider value={{ size: "1.2rem" }}>
                   <IoCloseSharp />
-                </IconContext.Provider>
+            </IconContext.Provider>
               </button>
             </div>
             
@@ -577,7 +577,7 @@ export const Player = () => {
               </div>
               
               {/* Controles de reproducción y navegación */}
-              <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3">
                 {/* Botón anterior */}
                 <button 
                   onClick={playPreviousSong}
@@ -646,11 +646,11 @@ export const Player = () => {
                 >
                   <IconContext.Provider value={{ size: "0.9rem" }}>
                     {getVolumeIcon()}
-                  </IconContext.Provider>
+            </IconContext.Provider>
                 </button>
                 
                 <div className="flex-1 max-w-[120px]">
-                  <Slider
+            <Slider
                     value={audioVolume}
                     onChange={onVolumeChange}
                     min={0}
@@ -665,12 +665,12 @@ export const Player = () => {
                       backgroundColor: "rgba(255, 255, 255, 0.9)",
                       height: 3,
                       borderRadius: 1.5
-                    }}
-                    handleStyle={{
+              }}
+              handleStyle={{
                       backgroundColor: "#ffffff",
                       border: "none",
                       boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                      opacity: 1,
+                opacity: 1,
                       height: 10,
                       width: 10,
                       marginTop: -3.5,
@@ -807,8 +807,8 @@ export const Player = () => {
                     backgroundColor: "rgba(255, 255, 255, 0.2)",
                     height: 4,
                     borderRadius: 2
-                  }}
-                  trackStyle={{
+              }}
+              trackStyle={{
                     backgroundColor: "rgba(255, 255, 255, 0.8)",
                     height: 4,
                     borderRadius: 2
