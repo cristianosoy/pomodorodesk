@@ -43,6 +43,7 @@ import { UnsplashFooter } from "../components/Nav/UnsplashFooter";
 import clsx from "clsx";
 import React from "react";
 import { Background } from "@App/App";
+import Clock from '../components/Clock/Clock';
 
 export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { isMusicToggled, isMusicShown } = useToggleMusic();
@@ -298,6 +299,7 @@ export const PomoDesk = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </DWrapper>
         </>
       )}
+      <Clock />
     </div>
   );
 });
