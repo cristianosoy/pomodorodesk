@@ -66,6 +66,26 @@ export const Player = () => {
   const [isImageTransitioning, setIsImageTransitioning] = useState(false);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
 
+  // Efecto para cargar y reproducir la última estación al iniciar
+  useEffect(() => {
+    const lastStation = localStorage.getItem('lastStation');
+    if (lastStation && songs.length > 0) {
+      const station = songs.find(s => s.id === lastStation);
+      if (station) {
+        setSong(station.id);
+        setIsPlaying(true);
+        setAutoPlay(1);
+      }
+    }
+  }, [songs]);
+
+  // Efecto para guardar la última estación reproducida
+  useEffect(() => {
+    if (song?.id && isPlaying) {
+      localStorage.setItem('lastStation', song.id);
+    }
+  }, [song?.id, isPlaying]);
+
   useEffect(() => {
     if (toggledSong) {
       setIsPlaying(true);
