@@ -34,17 +34,24 @@ const Clock = () => {
 
   return (
     <div className="fixed bottom-6 right-6 text-right z-50">
-      <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 shadow-lg">
-        <div className="flex items-baseline justify-end gap-1">
-          <span className="text-5xl font-semibold text-white tracking-wide">
-            {formatTime(time)}
-          </span>
-          <span className="text-2xl font-normal text-white/90 ml-1">
-            {getPeriod(time)}
-          </span>
-        </div>
-        <div className="text-sm font-normal text-white/90 mt-1">
-          {formatDate(time)}
+      <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 shadow-lg flex items-center gap-4">
+        <img 
+          src="/assets/images/index/start-pomodoro.png" 
+          alt="Pomodoro Icon" 
+          className="w-12 h-12"
+        />
+        <div>
+          <div className="flex items-baseline justify-end gap-1">
+            <span className="text-5xl font-semibold text-white tracking-wide">
+              {formatTime(time)}
+            </span>
+            <span className="text-2xl font-normal text-white/90 ml-1">
+              {getPeriod(time)}
+            </span>
+          </div>
+          <div className="text-sm font-normal text-white/90 mt-1">
+            {formatDate(time)}
+          </div>
         </div>
       </div>
     </div>
